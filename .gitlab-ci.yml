@@ -1,5 +1,7 @@
 stages:
+  - build
   - test
+  - publish
 
 include:
   - project: "Northern.tech/Mender/mendertesting"
@@ -11,3 +13,10 @@ include:
       - '.gitlab-ci-check-commits-signoffs.yml'
   - project: "Northern.tech/Mender/mendertesting"
     file: ".gitlab-ci-check-license.yml"
+  - project: 'Northern.tech/Mender/mendertesting'
+    file: '.gitlab-ci-check-docker-build.yml'
+
+variables:
+  # Configure container image for build and publish
+  DOCKER_REPOSITORY: mendersoftware/mender-client-docker-addons
+  DOCKER_DIR: virtual-device
