@@ -1,5 +1,5 @@
-# Creates a container which acts as a bare bones non-VM based Mender
-# installation, for use in tests.
+# Creates a container which acts as a bare bones non-VM based Mender Client
+# installation, for use in tests and as Virtual Device for evaluation
 FROM ubuntu:24.04 AS build
 
 ENV DEBIAN_FRONTEND=noninteractive
