@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y make git build-essential golang liblzma
 
 ARG MENDER_CLIENT_REV=master
 ARG MENDER_CONNECT_REV=master
+ARG MENDER_CONFIGURE_REV=master
 
 RUN git clone https://github.com/mendersoftware/mender /src/mender
 RUN (cd /src/mender && git fetch origin $MENDER_CLIENT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CLIENT_REV)
@@ -18,10 +19,7 @@ RUN git clone https://github.com/mendersoftware/mender-connect /src/mender-conne
 RUN (cd /src/mender-connect && git fetch origin $MENDER_CONNECT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONNECT_REV)
 
 RUN git clone https://github.com/mendersoftware/mender-configure-module /src/mender-configure-module
-# Checkout latest tag. No-op if there are no tags (stay in master)
-RUN (cd /src/mender-configure-module && \
-    latest=$(git tag | egrep ^[0-9]+\.[0-9]+\.[0-9]+*$ | sort | tail -n1) && \
-    git checkout $latest)
+RUN (cd /src/mender-configure-module && git fetch origin $MENDER_CONFIGURE_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONFIGURE_REV)
 
 RUN mkdir --parents /mender-install/etc/mender
 
