@@ -41,7 +41,7 @@ install-inventory-script: inventory-script/mender-inventory-client-version
 	install -m 755 inventory-script/mender-inventory-client-version $(prefix)$(inventorydir)/
 
 generate-conflicts:
-	@jq -r '.repos[] | "\(.name) (< \(.version))$(CONFLICTS_SEP) \(.name) (> \(.version))$(CONFLICTS_SEP)"' subcomponents/releases/$(RELEASE).json | tr '\n' ' ' | sed 's/$(CONFLICTS_SEP) $$//'
+	@jq -r '.components[] | "\(.name) (< \(.version))$(CONFLICTS_SEP) \(.name) (> \(.version))$(CONFLICTS_SEP)"' subcomponents/releases/$(RELEASE).json | tr '\n' ' ' | sed 's/$(CONFLICTS_SEP) $$//'
 
 check-dependencies:
 	@missing=""; \

@@ -3,28 +3,28 @@
   "title": "Mender Client release definition",
   "description": "Defines a single release of Mender Client as a collection of subcomponents and its versions. See https://docs.mender.io/release-information/supported-releases#mender-client-subcomponents",
   "type": "object",
-  "required": ["version", "repos"],
+  "required": ["version", "components"],
   "properties": {
     "version": {
       "type": "string",
       "description": "The release version identifier (e.g., '1.2.3')",
       "pattern": "^\\d+\\.\\d+\\.\\d+$"
     },
-    "repos": {
+    "components": {
       "type": "array",
-      "description": "List of repositories and their versions for this release",
+      "description": "List of components and their versions for this release",
       "items": {
         "type": "object",
         "required": ["name", "version"],
         "properties": {
           "name": {
             "type": "string",
-            "description": "Repository name",
+            "description": "Component name",
             "minLength": 1
           },
           "version": {
             "type": "string",
-            "description": "Version of this repository in the release",
+            "description": "Version of this component in the release",
             "minLength": 1
           }
         },
