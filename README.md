@@ -1,12 +1,28 @@
 [![Build Status](https://gitlab.com/Northern.tech/Mender/mender-artifact/badges/master/pipeline.svg)](https://gitlab.com/Northern.tech/Mender/mender-artifact/pipelines)
 
-# mender-client-subcomponents
+# Mender Client subcomponents
 
 Mender is an open source over-the-air (OTA) software updater for embedded Linux
 devices. Mender comprises a client running at the embedded device, as well as
 a server that manages deployments across many devices.
 
-Technical repository to group the Mender Client subcomponents, provide an inventory script for the Mender Client version, and build the Mender Virtual Device
+This repository serves two main purposes:
+
+1. **Inventory Script**: Provides `mender-inventory-client-version`, an
+   inventory script that reports the `mender_client_version` key. See the
+   [Default inventory from Mender Docs](https://docs.mender.io/client-installation/inventory#default-inventory).
+   The script is available as both Yocto recipe and Debian package which ensures
+   a supported combination of Mender subcomponents running on the device.
+
+2. **Subcomponents Relationship**: Maintains JSON files defining the
+   relationship between Mender Client subcomponents for each release (e.g.,
+   `{"mender-update": "1.2.3", "mender-connect": "4.5.6", ...}`). See the
+   [Mender Client subcomponents from Mender Docs](https://docs.mender.io/release-information/supported-releases#mender-client-subcomponents).
+   New files are added with each release. .
+
+Additionally, this repository builds and publishes the Virtual Device for application
+updates, used for Mender on-boarding. The Docker configuration was migrated from the
+[integration repository](https://github.com/mendersoftware/integration/tree/e896c9e62263b6ad9d41e330f0c52d23d159ded9/extra/mender-client-docker-addons).
 
 ## Contributing
 
