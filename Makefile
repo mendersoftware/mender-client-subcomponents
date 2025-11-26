@@ -8,14 +8,17 @@ DESTDIR ?= /
 prefix ?= $(DESTDIR)
 inventorydir ?= /usr/share/mender/inventory
 
+CONFLICTS_SEP ?=
+
 help:
 	@echo 'Main commands:'
 	@echo '  build                      - Run all build-* targets'
 	@echo '  build-inventory-script     - Build the inventory script'
 	@echo '  install                    - Run all install-* targets'
 	@echo '  install-inventory-script   - Install the inventory script'
+	@echo '  generate-conflicts         - Output conflicts string for package/recipe of this release'
 	@echo ''
-	@echo 'Building for Mender Client release: $(RELEASE)'
+	@echo 'Using Mender Client release: $(RELEASE)'
 	@echo 'Available versions: $(ALL_RELEASES)'
 	@echo 'Use "RELEASE=... make" to specify a release'
 	@echo ''
@@ -37,6 +40,9 @@ install-inventory-script: inventory-script/mender-inventory-client-version
 	install -d -m 755 $(prefix)$(inventorydir)
 	install -m 755 inventory-script/mender-inventory-client-version $(prefix)$(inventorydir)/
 
+generate-conflicts:
+	@jq -r '.repos[] | "\(.name) (< \(.version))$(CONFLICTS_SEP) \(.name) (> \(.version))$(CONFLICTS_SEP)"' subcomponents/releases/$(RELEASE).json | tr '\n' ' ' | sed 's/$(CONFLICTS_SEP) $$//'
+
 check-dependencies:
 	@missing=""; \
 	for cmd in jq envsubst; do \
@@ -53,3 +59,4 @@ check-dependencies:
 .PHONY: build
 .PHONY: build-inventory-script
 .PHONY: check-dependencies
+.PHONY: generate-conflicts
