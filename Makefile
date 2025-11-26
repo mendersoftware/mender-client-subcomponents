@@ -4,10 +4,16 @@ ALL_RELEASES := $(sort $(patsubst subcomponents/releases/%.json,%,$(wildcard sub
 LATEST_RELEASE := $(shell echo "$(ALL_RELEASES)" | tr ' ' '\n' | sort -V | tail -n1)
 RELEASE ?= $(LATEST_RELEASE)
 
+DESTDIR ?= /
+prefix ?= $(DESTDIR)
+inventorydir ?= /usr/share/mender/inventory
+
 help:
 	@echo 'Main commands:'
 	@echo '  build                      - Run all build-* targets'
 	@echo '  build-inventory-script     - Build the inventory script'
+	@echo '  install                    - Run all install-* targets'
+	@echo '  install-inventory-script   - Install the inventory script'
 	@echo ''
 	@echo 'Building for Mender Client release: $(RELEASE)'
 	@echo 'Available versions: $(ALL_RELEASES)'
@@ -17,11 +23,19 @@ help:
 	@echo '  check-deps                 - Check dependencies'
 
 
+inventory-script/mender-inventory-client-version: build-inventory-script
+
 build: build-inventory-script
 
 build-inventory-script:
 	$(eval MENDER_CLIENT_VERSION := $(shell jq -r '.version' subcomponents/releases/$(RELEASE).json))
 	MENDER_CLIENT_VERSION=$(MENDER_CLIENT_VERSION) envsubst '$$MENDER_CLIENT_VERSION' < inventory-script/mender-inventory-client-version.in > inventory-script/mender-inventory-client-version
+
+install: install-inventory-script
+
+install-inventory-script: inventory-script/mender-inventory-client-version
+	install -d -m 755 $(prefix)$(inventorydir)
+	install -m 755 inventory-script/mender-inventory-client-version $(prefix)$(inventorydir)/
 
 check-dependencies:
 	@missing=""; \
