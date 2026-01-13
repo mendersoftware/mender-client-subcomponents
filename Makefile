@@ -18,6 +18,7 @@ help:
 	@echo '  install                    - Run all install-* targets'
 	@echo '  install-inventory-script   - Install the inventory script'
 	@echo '  generate-conflicts         - Output conflicts string for package/recipe of this release'
+	@echo '  clean                      - Remove auto generated files'
 	@echo ''
 	@echo 'Using Mender Client release: $(RELEASE)'
 	@echo 'Available versions: $(ALL_RELEASES)'
@@ -73,9 +74,14 @@ check-dependencies:
 	fi
 	@echo "All dependencies are installed"
 
+clean:
+	rm -rfv $(CONFLICTS_FILE)
+	rm -rfv inventory-script/mender-inventory-client-version
+
 
 .PHONY: help
 .PHONY: build
 .PHONY: build-inventory-script
 .PHONY: generate-conflicts
 .PHONY: check-dependencies
+.PHONY: clean
