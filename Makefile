@@ -37,12 +37,12 @@ build-inventory-script:
 		echo "Error: Release file subcomponents/releases/$(RELEASE).json not found"; \
 		exit 1; \
 	}
-	$(eval MENDER_CLIENT_VERSION := $(shell jq -r '.version' subcomponents/releases/$(RELEASE).json))
-	@test "$(MENDER_CLIENT_VERSION)" != "null" || { \
+	@MENDER_CLIENT_VERSION=$$(jq -r '.version' subcomponents/releases/$(RELEASE).json); \
+	test "$$MENDER_CLIENT_VERSION" != "null" || { \
 		echo "Error: Could not extract version from subcomponents/releases/$(RELEASE).json"; \
 		exit 1; \
-	}
-	MENDER_CLIENT_VERSION=$(MENDER_CLIENT_VERSION) envsubst '$$MENDER_CLIENT_VERSION' < inventory-script/mender-inventory-client-version.in > inventory-script/mender-inventory-client-version
+	}; \
+	MENDER_CLIENT_VERSION=$$MENDER_CLIENT_VERSION envsubst '$$MENDER_CLIENT_VERSION' < inventory-script/mender-inventory-client-version.in > inventory-script/mender-inventory-client-version
 
 install: install-inventory-script
 
