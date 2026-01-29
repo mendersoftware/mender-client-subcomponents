@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 import pathlib
+from dataclasses import dataclass
 
 # Only do basic checks on these.
 OTHER_REPOS = [
@@ -40,6 +41,178 @@ TOOL_PATH = pathlib.Path(__file__).parent.resolve()
 
 # Template to pass to go-licenses report
 GO_LICENSES_TEMPLATE = os.path.join(TOOL_PATH, "go-licenses-extract.tpl")
+
+
+@dataclass
+class RepoInfo:
+    """Information about a repository to process."""
+
+    version: str
+    path: str
+
+    @property
+    def repo_name(self) -> str:
+        """Get repository name from path basename."""
+        return os.path.basename(self.path)
+
+
+def load_release_json(release_version):
+    """
+    Load and parse release JSON file.
+
+    Args:
+        release_version: Version string (e.g., "5.0.3")
+
+    Returns:
+        dict: Parsed JSON data
+
+    Raises:
+        SystemExit: If JSON doesn't exist or is malformed
+    """
+    import json
+
+    json_path = os.path.join(
+        TOOL_PATH, "..", "subcomponents", "releases", f"{release_version}.json"
+    )
+
+    if not os.path.exists(json_path):
+        sys.stderr.write(f"ERROR: Release file not found: {json_path}\n")
+        sys.stderr.write(f"Available releases:\n")
+        releases_dir = os.path.join(TOOL_PATH, "..", "subcomponents", "releases")
+        if os.path.exists(releases_dir):
+            for file in sorted(os.listdir(releases_dir)):
+                if file.endswith(".json"):
+                    sys.stderr.write(f"  - {file[:-5]}\n")
+        sys.exit(1)
+
+    try:
+        with open(json_path, "r") as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        sys.stderr.write(f"ERROR: Malformed JSON in {json_path}: {e}\n")
+        sys.exit(1)
+
+
+def build_repos_map(json_data, repos_dir):
+    """
+    Build repository list from JSON components.
+
+    Deduplicates by repo name - multiple components can come from same repo.
+    We only care about repositories, not individual components.
+
+    Args:
+        json_data: Parsed JSON with "components" list
+        repos_dir: Base directory containing repositories
+
+    Returns:
+        list[RepoInfo]: List of RepoInfo objects
+    """
+    repos_list = []
+    seen = set()
+
+    for component in json_data["components"]:
+        # Extract repo name from source URL (e.g., "github.com/.../mender" -> "mender")
+        repo_name = component["source"].rstrip("/").split("/")[-1]
+        if repo_name not in seen:
+            seen.add(repo_name)
+            repos_list.append(
+                RepoInfo(
+                    version=component["version"],
+                    path=os.path.join(repos_dir, repo_name),
+                )
+            )
+
+    return repos_list
+
+
+def get_git_version(repo_path):
+    """
+    Get current git version of a repository.
+
+    Tries multiple methods:
+    1. git describe --tags --exact-match (on exact tag)
+    2. git rev-parse --abbrev-ref HEAD (branch name)
+    3. git rev-parse --short HEAD (commit hash)
+
+    Args:
+        repo_path: Path to git repository
+
+    Returns:
+        str: Version identifier or "unknown"
+    """
+    try:
+        # Try exact tag match first
+        output = subprocess.check_output(
+            ["git", "describe", "--tags", "--exact-match"],
+            cwd=repo_path,
+            stderr=subprocess.DEVNULL,
+        )
+        return output.decode().strip()
+    except subprocess.CalledProcessError:
+        pass
+
+    try:
+        # Try branch name
+        output = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=repo_path,
+            stderr=subprocess.DEVNULL,
+        )
+        branch = output.decode().strip()
+        if branch and branch != "HEAD":
+            return branch
+    except subprocess.CalledProcessError:
+        pass
+
+    try:
+        # Fall back to commit hash
+        output = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=repo_path,
+            stderr=subprocess.DEVNULL,
+        )
+        return output.decode().strip()
+    except subprocess.CalledProcessError:
+        pass
+
+    return "unknown"
+
+
+def validate_repository_exists(repo_info):
+    """
+    Validate that a repository exists at expected path.
+
+    Args:
+        repo_info: RepoInfo object
+
+    Raises:
+        SystemExit: If repository doesn't exist
+    """
+    if not os.path.exists(repo_info.path):
+        sys.stderr.write(f"ERROR: Repository not found: {repo_info.path}\n")
+        sys.stderr.write(f"  Repository: {repo_info.repo_name}\n")
+        sys.exit(1)
+
+
+def check_version_match(repo_info):
+    """
+    Check if repository version matches expected version.
+    Prints warning if mismatch, but continues execution.
+
+    Args:
+        repo_info: RepoInfo object
+    """
+    actual_version = get_git_version(repo_info.path)
+
+    if actual_version != repo_info.version:
+        sys.stderr.write(
+            f"WARNING: Version mismatch in repository '{repo_info.repo_name}'\n"
+        )
+        sys.stderr.write(f"  Expected: {repo_info.version}\n")
+        sys.stderr.write(f"  Found: {actual_version}\n")
+        sys.stderr.write(f"  Path: {repo_info.path}\n")
+        sys.stderr.write(f"  (Continuing with found version)\n\n")
+
 
 # -------------------------------------------------------------------------------
 # Used as reference in the below variable.
