@@ -12,6 +12,15 @@ include:
   - project: 'Northern.tech/Mender/mendertesting'
     file: '.gitlab-ci-check-docker-build.yml'
 
+default:
+  tags:
+    - k8s-small
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+
 variables:
   # Configure container multiplatform image for build and publish
   DOCKER_REPOSITORY: mendersoftware/mender-client-docker-addons
