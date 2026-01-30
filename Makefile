@@ -24,8 +24,8 @@ help:
 	@echo 'Using Mender Client release: $(RELEASE)'
 	@echo 'Available versions: $(ALL_RELEASES)'
 	@echo ''
-	@echo 'Use "RELEASE=... make" to specify a release. When not specified,
-	@echo 'it defaults to the checked out Git tag. And if not in a Git tag,
+	@echo 'Use "RELEASE=... make" to specify a release. When not specified,'
+	@echo 'it defaults to the checked out Git tag. And if not in a Git tag,'
 	@echo 'it uses "unsupported" for the versions and generates no conflicts'
 	@echo ''
 	@echo 'Other commands:'
