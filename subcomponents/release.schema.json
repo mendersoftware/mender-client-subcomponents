@@ -24,8 +24,8 @@
           },
           "version": {
             "type": "string",
-            "description": "Version of this component in the release",
-            "minLength": 1
+            "description": "Version of this component in the release (e.g., tag '1.2.3', maintenance branch '1.2.x', or main branch)",
+            "pattern": "^(master|main|\\d+\\.\\d+\\.\\d+|\\d+\\.\\d+\\.x)$"
           }
           ,
           "source": {
