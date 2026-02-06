@@ -1,8 +1,257 @@
+# Mender Client next
+
+| Repository | Version |
+| --- | --- |
+| [mender](https://github.com/mendersoftware/mender) | master |
+| [mender-connect](https://github.com/mendersoftware/mender-connect) | master |
+| [monitor-client](https://github.com/mendersoftware/monitor-client) | master |
+| [mender-flash](https://github.com/mendersoftware/mender-flash) | master |
+| [mender-configure-module](https://github.com/mendersoftware/mender-configure-module) | master |
+| [mender-binary-delta](https://github.com/mendersoftware/mender-binary-delta) | master |
+| [mender-container-modules](https://github.com/mendersoftware/mender-container-modules) | main |
+
+## mender master (2026-07-17)
+
+### master - 2026-07-17
+
+
+#### New features
+
+- On a System Device, mender-update now refuses a deployment whose
+artifact is not a mender-orchestrator-manifest. ([MEN-9655](https://northerntech.atlassian.net/browse/MEN-9655))
+
+#### Bug fixes
+
+- Fix an issue where leaving RetryPollIntervalSeconds unset
+in mender.conf causes failed inventory and deployment polls to be
+retried without any delay. The default is now 300 seconds, with retries
+backing off from 60 seconds up to this maximum. This aligns the default
+with the Go client and the example production mender.conf. ([MEN-9719](https://northerntech.atlassian.net/browse/MEN-9719))
+- *(modules-artifact-gen)* Fail early when mender-artifact produces an invalid artifact
+- *(modules-artifact-gen)* Always remove temporary files
+- Ensure corrent order of globals initalization ([MEN-9878](https://northerntech.atlassian.net/browse/MEN-9878))
+
+#### All tickets resolved in this release
+
+| Ticket |
+|---|
+| [MEN-9719](https://northerntech.atlassian.net/browse/MEN-9719) |
+| [MEN-9878](https://northerntech.atlassian.net/browse/MEN-9878) |
+| [MEN-9655](https://northerntech.atlassian.net/browse/MEN-9655) |
+
+### qnx-preiew-1 - 2026-06-01
+
+
+#### New features
+
+- Large deployment logs are now trimmed to be accepted by the server ([MEN-9415](https://northerntech.atlassian.net/browse/MEN-9415))
+- mender-device-identity script now works on both Linux and QNX ([MEN-9133](https://northerntech.atlassian.net/browse/MEN-9133))
+- Use curl in the mender-inventory-geo script if available ([MEN-9704](https://northerntech.atlassian.net/browse/MEN-9704))
+
+#### Bug fixes
+
+- Added an explicit check for 413 Request Body Too Large errors
+when sending deployment logs in order to not go into an unnecessary retry
+loop when the deployment logs are too big. ([ME-616](https://northerntech.atlassian.net/browse/ME-616))
+- Handle first timestamp in deployment logs more carefully ([MEN-9427](https://northerntech.atlassian.net/browse/MEN-9427))
+- Inventory generator scripts are now sorted before
+running, ensuring consistency of inventory data between runs ([MEN-9635](https://northerntech.atlassian.net/browse/MEN-9635))
+- Use q++ as the CXX (C++) compiler on QNX ([MEN-9649](https://northerntech.atlassian.net/browse/MEN-9649))
+- Add CMAKE_CURRENT_BINARY_DIR to key-value DB include dirs ([MEN-9649](https://northerntech.atlassian.net/browse/MEN-9649))
+- Add arch-specific cmake dir to CMAKE_PREFIX_PATH on QNX ([MEN-9649](https://northerntech.atlassian.net/browse/MEN-9649))
+- Drop redundant const on unordered_map template arguments
+- Common/error: include <ostream> for operator<<(ostream&, string&)
+- Fail when device tier is invalid ([ME-636](https://northerntech.atlassian.net/browse/ME-636))
+- Make the single-file Update Module compatible with QNX ([MEN-9666](https://northerntech.atlassian.net/browse/MEN-9666))
+- Ensure correct permissions on mender.conf in dist-package tarballs ([MEN-9651](https://northerntech.atlassian.net/browse/MEN-9651))
+- Make contents of dist-package tarballs root-owned ([MEN-9651](https://northerntech.atlassian.net/browse/MEN-9651))
+- Ensure proper permissions on /etc/mender/mender.conf in binary tarballs ([MEN-9651](https://northerntech.atlassian.net/browse/MEN-9651))
+- Install the mender-inventory-provides script on QNX ([MEN-9704](https://northerntech.atlassian.net/browse/MEN-9704))
+- The /tmp/mender/inventory-geo cache file used by the
+mender-inventory-geo script now has stricter permissions (600) ([MEN-9752](https://northerntech.atlassian.net/browse/MEN-9752))
+- Make mender-inventory-hostinfo QNX-aware ([MEN-9704](https://northerntech.atlassian.net/browse/MEN-9704))
+- Make mender-inventory-network QNX-aware ([MEN-9704](https://northerntech.atlassian.net/browse/MEN-9704))
+- Include all relevant inventory scripts in builds for QNX ([MEN-9704](https://northerntech.atlassian.net/browse/MEN-9704))
+
+#### Dependency updates
+
+- Bump src/common/vendor/json from `21b5374` to `8167d2f`
+- Bump pygments in /support/modules-artifact-gen/tests
+- Bump src/common/vendor/json from `f534f4f` to `98386eb`
+- Bump pytest in /support/modules-artifact-gen/tests
+- Bump src/common/vendor/yaml-cpp from `05c050c` to `4861d04`
+
+#### All tickets resolved in this release
+
+| Ticket |
+|---|
+| [ME-616](https://northerntech.atlassian.net/browse/ME-616) |
+| [MEN-9427](https://northerntech.atlassian.net/browse/MEN-9427) |
+| [MEN-9415](https://northerntech.atlassian.net/browse/MEN-9415) |
+| [MEN-9133](https://northerntech.atlassian.net/browse/MEN-9133) |
+| [MEN-9635](https://northerntech.atlassian.net/browse/MEN-9635) |
+| [MEN-9649](https://northerntech.atlassian.net/browse/MEN-9649) |
+| [ME-636](https://northerntech.atlassian.net/browse/ME-636) |
+| [MEN-9666](https://northerntech.atlassian.net/browse/MEN-9666) |
+| [MEN-9651](https://northerntech.atlassian.net/browse/MEN-9651) |
+| [MEN-9704](https://northerntech.atlassian.net/browse/MEN-9704) |
+| [MEN-9752](https://northerntech.atlassian.net/browse/MEN-9752) |
+
+## mender-connect master (2026-07-15)
+
+### master - 2026-07-15
+
+
+#### New features
+
+- Implement port-forwarding protocol v2 ([MEN-5902](https://northerntech.atlassian.net/browse/MEN-5902))
+
+#### Bug fixes
+
+- Do not ignore terminal ignore terminal port-forwarding error
+  If mender-connect fails to write a message to the connection, treat it
+  as a terminal error instead of ignoring it.
+
+- Handle partial write to port-forwarding connection
+
+#### All tickets resolved in this release
+
+| Ticket |
+|---|
+| [MEN-5902](https://northerntech.atlassian.net/browse/MEN-5902) |
+
+## monitor-client master (2026-07-15)
+
+No changelog entries found.
+
+## mender-flash master (2026-07-15)
+
+No changelog entries found.
+
+## mender-configure-module master (2026-07-15)
+
+### master - 2026-07-15
+
+
+#### New features
+
+- mender-configure doesn't rely anymore on mender-updated to fetch new Jwt tokens over dbus ([MEN-7732](https://northerntech.atlassian.net/browse/MEN-7732))
+
+#### Bug fixes
+
+- Make systemd installation systemd_unitdir aware
+- Exit with returncode 0 in `mender-inventory-mender-configure`
+if no jwt token is obtained over dbus. This stops mender-update from logging
+errors from the inventory script before mender-auth is ready or if the
+device isn't accepted. ([MEN-8591](https://northerntech.atlassian.net/browse/MEN-8591))
+- Updated path to LED on raspberrypi to allow for blinking LED
+demo. ([MEN-9002](https://northerntech.atlassian.net/browse/MEN-9002))
+- Fixed an issue where passing either `on` or `off` to
+mender-demo-raspberrypi-led resulted in an invalid config error. The
+previous value for the trigger was `gpio` which is no longer valid.
+Set the LED config to `default-on` when passing `on` and `none` when passing
+off. ([MEN-9375](https://northerntech.atlassian.net/browse/MEN-9375))
+
+#### Dependency updates
+
+- Bump tests/unit/shunit2 from `47be8b2` to `3334e53`
+- Bump tests/integration/mender_test_containers
+- Bump tests/integration/mender_integration
+- Bump tests/unit/shunit2 from `3334e53` to `da1e19d`
+- Bump tests/unit/shunit2 from `da1e19d` to `100ffe4`
+- Bump tests/unit/shunit2 from `100ffe4` to `0f27c1a`
+- Bump tests/unit/shunit2 from `0f27c1a` to `6d31ca9`
+- Bump tests/unit/shunit2 from `6d31ca9` to `e35296d`
+- Bump tests/unit/shunit2 from `e35296d` to `f39734a`
+- *(deps)* Update dependency mendersoftware/mender-artifact to v4.4.0
+
+#### All tickets resolved in this release
+
+| Ticket |
+|---|
+| [MEN-8591](https://northerntech.atlassian.net/browse/MEN-8591) |
+| [MEN-9002](https://northerntech.atlassian.net/browse/MEN-9002) |
+| [MEN-9375](https://northerntech.atlassian.net/browse/MEN-9375) |
+| [MEN-7732](https://northerntech.atlassian.net/browse/MEN-7732) |
+
+## mender-binary-delta master (2026-07-15)
+
+### master - 2026-07-15
+
+
+#### Bug fixes
+
+- Convert the boot partition numbers to int before comparison. ([MEN-8043](https://northerntech.atlassian.net/browse/MEN-8043))
+- Fix segfault when failing to get part number during install
+  This was a hidden bug that surfaced now while fixing the support for
+  PARTUUID and PARTLABEL. Or, in other words, when handling Mender
+  configuration with partitions that do not end with a number. In this
+  case pass_num is NULL and xasprintf will try to dereference it.
+
+- Correctly apply deltas with PARTUUID and PARTLABEL configuration ([MEN-7160](https://northerntech.atlassian.net/browse/MEN-7160))
+  This fixes the bug where mender-binary-delta fails to apply the delta
+  when partitions are configured with PARTUUID or PARTLABEL options.
+  
+  Fixes the issue by first resolving the device symlinks like
+  /dev/disk/by-partuuid/*, /dev/disk/by-partlabel/*, and /dev/root to
+  their actual device paths (e.g., /dev/sda2, /dev/mmcblk0p2) and then
+  extracting the partition numbers.
+  
+  Related to https://github.com/mendersoftware/mender/pull/1613
+
+- Add missing license to the OS licenses manifest
+
+#### Dependency updates
+
+- Bump tests/integration/mender_integration
+- Bump tests/integration/mender_test_containers
+- Bump tests/unit/cmocka from `2206c22` to `f9e5b1f`
+- Bump libntech from `8b72e12` to `58705c5`
+- Bump tests/unit/cmocka from `f9e5b1f` to `2453c23`
+- Bump libntech from `58705c5` to `329361a`
+- Bump libntech from `329361a` to `13a9e99`
+- Bump tests/unit/cmocka from `2453c23` to `8f3854a`
+- Bump tests/unit/cmocka from `8f3854a` to `fa9b644`
+- Bump libntech from `13a9e99` to `4e45713`
+- Bump libntech from `4e45713` to `072bbcc`
+- Bump libntech from `072bbcc` to `69e2624`
+- Bump submodules
+- *(deps)* Update dependency mendersoftware/mender-artifact to v4.4.0
+
+#### All tickets resolved in this release
+
+| Ticket |
+|---|
+| [MEN-8043](https://northerntech.atlassian.net/browse/MEN-8043) |
+| [MEN-7160](https://northerntech.atlassian.net/browse/MEN-7160) |
+
+## mender-container-modules main (2026-07-01)
+
+### main - 2026-07-01
+
+
+#### Improvements
+
+- Make most parts of the docker-compose UM reusable ([MEN-9442](https://northerntech.atlassian.net/browse/MEN-9442))
+- Make most parts of the gen_docker-compose generator reusable ([MEN-9442](https://northerntech.atlassian.net/browse/MEN-9442))
+
+#### Bug fixes
+
+- Cd into manifest dir beforing listing running containers ([MEN-9641](https://northerntech.atlassian.net/browse/MEN-9641))
+- *(docker-compose)* Fail if extracting images from artifact fails ([MEN-9442](https://northerntech.atlassian.net/browse/MEN-9442))
+
+#### All tickets resolved in this release
+
+| Ticket |
+|---|
+| [MEN-9641](https://northerntech.atlassian.net/browse/MEN-9641) |
+| [MEN-9442](https://northerntech.atlassian.net/browse/MEN-9442) |
 
 ---
-## Older releases
 
-Previous to Mender Client 6.0, the release notes & changelog can be found in the pages for the individual components:
+# Older releases (pre Mender Client 6.0)
+
+The release notes & changelogs can be found in the pages for the individual components:
 
 * [mender](20.Mender-Client/docs.md)
 * [mender-connect](21.mender-connect/docs.md)
@@ -11,7 +260,7 @@ Previous to Mender Client 6.0, the release notes & changelog can be found in the
 * [mender-binary-delta](50.mender-binary-delta/docs.md)
 * [monitor-client](51.monitor-client/docs.md)
 
-The following release notes & changelog are for `mender` repository alone, prior to Mender Client 6.0
+The following release notes & changelogs are for the `mender` repository alone.
 
 ## mender 5.0.3
 
