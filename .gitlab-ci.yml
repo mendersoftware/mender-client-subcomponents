@@ -268,9 +268,7 @@ release:candidate:update-changelog:
     - RELEASE_CANDIDATE_PR=$(gh pr list --author "mender-test-bot" --head "release-candidate-${CI_COMMIT_REF_NAME}" --json number | jq -r '.[0].number // empty')
     - if [ -z "$RELEASE_CANDIDATE_PR" ]; then
     -   git checkout -b release-candidate-${CI_COMMIT_REF_NAME}
-    -   echo ":construction:" > CHANGELOG.md
-    -   git add CHANGELOG.md
-    -   'git commit -s -m "chore: Update CHANGELOG for Mender Client ${CI_COMMIT_REF_NAME}"'
+    -   'git commit --allow-empty -s -m "chore: Update CHANGELOG for Mender Client ${CI_COMMIT_REF_NAME}"'
     -   git push --force github-${CI_JOB_ID} release-candidate-${CI_COMMIT_REF_NAME}
     -   gh pr create
           --title "Update CHANGELOG for Mender Client ${CI_COMMIT_REF_NAME}"
