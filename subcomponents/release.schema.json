@@ -8,7 +8,7 @@
     "version": {
       "type": "string",
       "description": "The release version identifier (e.g., tag '1.2.3', or 'next')",
-      "pattern": "^(next|\\d+\\.\\d+\\.\\d+)$"
+      "pattern": "^(next|\\d+\\.\\d+\\.\\d+(-build\\d+)?)$"
     },
     "components": {
       "type": "array",
@@ -25,7 +25,7 @@
           "version": {
             "type": "string",
             "description": "Version of this component in the release (e.g., tag '1.2.3', maintenance branch '1.2.x', or main branch)",
-            "pattern": "^(master|main|\\d+\\.\\d+\\.\\d+|\\d+\\.\\d+\\.x)$"
+            "pattern": "^(master|main|\\d+\\.\\d+\\.\\d+(-build\\d+)?|\\d+\\.\\d+\\.x)$"
           }
           ,
           "source": {
