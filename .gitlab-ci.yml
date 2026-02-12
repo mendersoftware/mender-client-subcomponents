@@ -73,6 +73,14 @@ test:build:inventory-script:releases:
         test "echo mender_client_version=$version" = "$(cat inventory-script/mender-inventory-client-version)"
       done
 
+test:build:inventory-script:default:
+  extends: .test:build:inventory-script:base
+  script:
+    - make build
+    - cat inventory-script/mender-inventory-client-version
+    # For the default build, we want to verify that _something_ was produced
+    - grep "^echo mender_client_version=" inventory-script/mender-inventory-client-version
+
 test:build:inventory-script:unsupported:
   extends: .test:build:inventory-script:base
   rules:
