@@ -54,12 +54,15 @@ publish:image:mender:
   rules:
     - when: never
 
-test:build:inventory-script:releases:
+.test:build:inventory-script:base:
   stage: test
   needs: []
   image: debian:13-slim
   before_script:
     - apt-get update && apt-get install -y make jq gettext-base
+
+test:build:inventory-script:releases:
+  extends: .test:build:inventory-script:base
   script:
     - |
       for file in subcomponents/releases/*.json; do
@@ -70,20 +73,24 @@ test:build:inventory-script:releases:
         test "echo mender_client_version=$version" = "$(cat inventory-script/mender-inventory-client-version)"
       done
 
+test:build:inventory-script:default:
+  extends: .test:build:inventory-script:base
+  script:
+    - make build
+    - cat inventory-script/mender-inventory-client-version
+    # For the default build, we want to verify that _something_ was produced
+    - grep "^echo mender_client_version=" inventory-script/mender-inventory-client-version
+
 test:build:inventory-script:unsupported:
-  stage: test
-  needs: []
-  image: debian:13-slim
+  extends: .test:build:inventory-script:base
   rules:
     # This test is N/A from Git tags
     - if: $CI_COMMIT_TAG
-  before_script:
-    - apt-get update && apt-get install -y make jq gettext-base
+      when: never
   script:
-    - |
-      make build
-      cat inventory-script/mender-inventory-client-version
-      test "echo mender_client_version=unsupported = "$(cat inventory-script/mender-inventory-client-version)"
+    - make build
+    - cat inventory-script/mender-inventory-client-version
+    - test "echo mender_client_version=unsupported" = "$(cat inventory-script/mender-inventory-client-version)"
 
 test:validate:schema:
   stage: test

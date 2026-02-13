@@ -1,8 +1,8 @@
 SHELL := /bin/bash
 
 ALL_RELEASES := $(sort $(patsubst subcomponents/releases/%.json,%,$(wildcard subcomponents/releases/*.json)))
-# By default define RELEASE from Git tag. Remove the release candidate suffix
-GIT_VERSION = $(shell git describe --tags --exact-match 2>/dev/null | sed 's/-build[0-9]\+$$//')
+# By default define RELEASE from Git tag
+GIT_VERSION = $(shell git describe --tags --exact-match 2>/dev/null)
 RELEASE ?= $(GIT_VERSION)
 
 DESTDIR ?= /
