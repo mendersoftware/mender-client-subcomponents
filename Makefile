@@ -79,7 +79,7 @@ generate-conflicts:
 
 check-dependencies:
 	@missing=""; \
-	for cmd in jq envsubst; do \
+	for cmd in jq envsubst git; do \
 		which $$cmd >/dev/null 2>&1 || missing="$$missing $$cmd"; \
 	done; \
 	if [ -n "$$missing" ]; then \

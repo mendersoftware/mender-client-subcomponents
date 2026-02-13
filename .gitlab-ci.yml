@@ -59,7 +59,8 @@ publish:image:mender:
   needs: []
   image: debian:13-slim
   before_script:
-    - apt-get update && apt-get install -y make jq gettext-base
+    - apt-get update && apt-get install -y make jq gettext-base git
+    - make check-dependencies
 
 test:build:inventory-script:releases:
   extends: .test:build:inventory-script:base
