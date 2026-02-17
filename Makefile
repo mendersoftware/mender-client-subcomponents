@@ -67,14 +67,7 @@ generate-conflicts:
 		echo "Warning: No RELEASE specified, generating empty conflicts file"; \
 		echo "" > $(CONFLICTS_FILE); \
 	else \
-		test -f subcomponents/releases/$(RELEASE).json || { \
-			echo "Error: Release file subcomponents/releases/$(RELEASE).json not found"; \
-			exit 1; \
-		}; \
-		jq -r '.components[] | "\(.name) (< \(.version))$(CONFLICTS_SEP) \(.name) (> \(.version))$(CONFLICTS_SEP)"' \
-			subcomponents/releases/$(RELEASE).json | \
-			tr '\n' ' ' | \
-			sed 's/$(CONFLICTS_SEP) $$//' | tee $(CONFLICTS_FILE); \
+		./generate-conflicts subcomponents/releases/$(RELEASE).json "$(CONFLICTS_SEP)" $(CONFLICTS_FILE); \
 	fi
 
 check-dependencies:

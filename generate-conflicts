@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Generate package conflicts string from release JSON file
+#
+# Usage: generate-conflicts <release-file> [separator] [output-file]
+#
+# Arguments:
+#   release-file  Path to release JSON file (required)
+#   separator     Separator between conflict entries (optional, default: empty string)
+#   output-file   Output file path (optional, default: stdout)
+#
+# Example:
+#   ./generate-conflicts subcomponents/releases/5.0.0.json
+#   ./generate-conflicts subcomponents/releases/5.0.0.json ", " build/conflicts
+
+set -e
+
+RELEASE_FILE="$1"
+SEPARATOR="${2:-}"
+OUTPUT_FILE="${3:-}"
+
+# Check if release file argument is provided
+if [ -z "$RELEASE_FILE" ]; then
+    echo "Error: Release file argument is required" >&2
+    echo "Usage: $0 <release-file> [separator] [output-file]" >&2
+    exit 1
+fi
+
+# Check if release file exists
+if [ ! -f "$RELEASE_FILE" ]; then
+    echo "Error: Release file $RELEASE_FILE not found" >&2
+    exit 1
+fi
+
+# Generate conflicts string
+conflicts=$(jq -r '.components[] | "\(.name) \(.version)"' "$RELEASE_FILE" | while read name version; do
+    # Strip pre-release suffix (e.g., "5.1.0-build2" -> "5.1.0")
+    base_version="${version%%-*}"
+
+    # Check if version is semantic (x.y.z format)
+    if [[ $base_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        # Parse semantic version into components
+        IFS='.' read -r major minor patch <<< "$base_version"
+
+        # Calculate previous version (decrement minor, set patch to 99)
+        if [ "$minor" -eq 0 ]; then
+            # Special case: if minor is 0, decrement major instead
+            prev_major=$((major - 1))
+            prev_version="$prev_major.99.99"
+        else
+            prev_minor=$((minor - 1))
+            prev_version="$major.$prev_minor.99"
+        fi
+
+        # Calculate next version (increment patch)
+        next_patch=$((patch + 1))
+        next_version="$major.$minor.$next_patch"
+
+        # Output with <= and >= operators for semantic versions
+        echo -n "$name (<= $prev_version)$SEPARATOR $name (>= $next_version)$SEPARATOR "
+    else
+        # For non-semantic versions (e.g., "master", "main"), fail with error
+        echo "Error: Conflicts generation is only for semantic versions. Component '$name' has non-semantic version '$version'" >&2
+        exit 1
+    fi
+done | sed "s/$SEPARATOR \$//")
+
+# Check if conflicts generation failed
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+# Write output to file and stdout
+if [ -n "$OUTPUT_FILE" ]; then
+    echo "$conflicts" > "$OUTPUT_FILE"
+fi
+echo "$conflicts"
