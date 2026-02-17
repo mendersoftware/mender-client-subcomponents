@@ -71,7 +71,7 @@ generate-conflicts:
 			echo "Error: Release file subcomponents/releases/$(RELEASE).json not found"; \
 			exit 1; \
 		}; \
-		jq -r '.components[] | "\(.name) (< \(.version))$(CONFLICTS_SEP) \(.name) (> \(.version))$(CONFLICTS_SEP)"' \
+		jq -r '.components[] | "\(.name) (<< \(.version))$(CONFLICTS_SEP) \(.name) (>> \(.version))$(CONFLICTS_SEP)"' \
 			subcomponents/releases/$(RELEASE).json | \
 			tr '\n' ' ' | \
 			sed 's/$(CONFLICTS_SEP) $$//' | tee $(CONFLICTS_FILE); \
