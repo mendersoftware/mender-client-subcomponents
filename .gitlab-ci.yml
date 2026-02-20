@@ -43,7 +43,7 @@ variables:
   MULTIPLATFORM_BUILD: "true"
   MULTIPLATFORM_PLATFORMS: "linux/amd64,linux/arm64"
 
-# Exclude non multiplatform jobs
+# Exclude publish jobs - the Virtual Device is published from mender-qa together with the rest
 build:docker:
   rules:
     - when: never
@@ -51,6 +51,9 @@ publish:image:
   rules:
     - when: never
 publish:image:mender:
+  rules:
+    - when: never
+publish:image-multiplatform:
   rules:
     - when: never
 
