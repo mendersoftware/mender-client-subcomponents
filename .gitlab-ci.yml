@@ -16,16 +16,15 @@ include:
   - component: gitlab.com/Northern.tech/Mender/mendertesting/release-docs-changelog@master
     inputs:
       remote_changelog_file: "20.Mender-Client/docs.md"
+      when: manual
       rules:
         # NOTE: It is still TBD how to keep a single source of truth for the CHANGELOG.md in the main branch
         # In order to not automate "too early" let's keep the jobs manual and instruct in the release process
         # that a human needs to merge and resolve conflicts when required.
         # Run on maintenance branches (1.0.x or v1.0.x format)
         - if: $CI_COMMIT_BRANCH =~ "/^v?\\d+\\.\\d+\\.x$/"
-          when: manual
         # Or on default branch
         - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-          when: manual
 
 default:
   tags:
