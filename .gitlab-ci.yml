@@ -280,10 +280,12 @@ release:candidate:update-changelog:
     -   git checkout -b release-candidate-${CI_COMMIT_REF_NAME}
     -   'git commit --allow-empty -s -m "chore: Update CHANGELOG for Mender Client ${CI_COMMIT_REF_NAME}"'
     -   git push --force github-${CI_JOB_ID} release-candidate-${CI_COMMIT_REF_NAME}
-    -   gh pr create
-          --title "Update CHANGELOG for Mender Client ${CI_COMMIT_REF_NAME}"
-          --body ":construction:"
-          --base ${CI_COMMIT_REF_NAME}
+    - |
+        gh pr create \
+          --title "Update CHANGELOG for Mender Client ${CI_COMMIT_REF_NAME}" \
+          --label "release: pending" \
+          --body ":construction:" \
+          --base ${CI_COMMIT_REF_NAME} \
           --head release-candidate-${CI_COMMIT_REF_NAME}
     #   Tiny sleep to avoid race condition:
     #   The PR just created by release-please takes some time to be listed by GitHub API
