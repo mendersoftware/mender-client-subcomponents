@@ -268,6 +268,37 @@ def get_repos_from_current_json(state):
     return get_repos_from_json(json_data)
 
 
+def get_all_repos_including_subcomponents(state):
+    """Get all repositories including mender-client-subcomponents.
+
+    Returns a unified list of repo info dicts that can be iterated uniformly.
+
+    Each dict contains:
+        - repo: str (repo name)
+        - source: str or None (None for subcomponents)
+        - components: list (empty for subcomponents)
+        - version: str (version/branch from JSON or state)
+
+    Args:
+        state: Release state dict
+
+    Returns:
+        list: Unified repo info dicts
+    """
+    repos = get_repos_from_current_json(state)
+
+    repos.append(
+        {
+            "repo": "mender-client-subcomponents",
+            "source": None,
+            "components": [],
+            "version": state.get("version"),
+        }
+    )
+
+    return repos
+
+
 # ============================================================================
 # End of JSON Data Layer Functions
 # ============================================================================
@@ -611,10 +642,10 @@ def refresh_repos(state):
 
     git_list = []
 
-    # Get unique repositories from JSON
-    repos = get_repos_from_current_json(state)
+    # Get all repositories including mender-client-subcomponents
+    all_repos = get_all_repos_including_subcomponents(state)
 
-    for repo_info in repos:
+    for repo_info in all_repos:
         repo_name = repo_info["repo"]
         remote = find_upstream_remote(state, repo_name)
         git_list.append(
@@ -624,21 +655,6 @@ def refresh_repos(state):
                 ["fetch", "--tags", remote, "+refs/heads/*:refs/remotes/%s/*" % remote],
             )
         )
-
-    # Also fetch mender-client-subcomponents
-    subcomp_remote = find_upstream_remote(state, "mender-client-subcomponents")
-    git_list.append(
-        (
-            state,
-            "mender-client-subcomponents",
-            [
-                "fetch",
-                "--tags",
-                subcomp_remote,
-                "+refs/heads/*:refs/remotes/%s/*" % subcomp_remote,
-            ],
-        )
-    )
 
     query_execute_git_list(git_list)
 
@@ -656,25 +672,31 @@ def check_tag_availability(state):
 
     tag_avail = {}
 
-    # Get unique repositories from JSON (source-based deduplication)
-    repos = get_repos_from_current_json(state)
+    # Get all repositories including mender-client-subcomponents
+    all_repos = get_all_repos_including_subcomponents(state)
 
     missing_repos = False
-    for repo_info in repos:
+    for repo_info in all_repos:
         repo_name = repo_info["repo"]
         tag_avail[repo_name] = {}
+
+        # Get version from repo_info
+        if repo_name == "mender-client-subcomponents":
+            repo_version = repo_info["version"]
+        else:
+            repo_version = state[repo_name]["version"]
 
         try:
             execute_git(
                 state,
                 repo_name,
-                ["rev-parse", state[repo_name]["version"]],
+                ["rev-parse", repo_version],
                 capture=True,
                 capture_stderr=True,
             )
             # No exception happened during above call: This is a final release tag.
             tag_avail[repo_name]["already_released"] = True
-            tag_avail[repo_name]["build_tag"] = state[repo_name]["version"]
+            tag_avail[repo_name]["build_tag"] = repo_version
         except FileNotFoundError as err:
             print(err)
             missing_repos = True
@@ -687,9 +709,7 @@ def check_tag_availability(state):
             tags = execute_git(state, repo_name, ["tag"], capture=True)
             highest = -1
             for tag in tags.split("\n"):
-                match = re.match(
-                    "^%s-build([0-9]+)$" % re.escape(state[repo_name]["version"]), tag
-                )
+                match = re.match("^%s-build([0-9]+)$" % re.escape(repo_version), tag)
                 if match is not None and int(match.group(1)) > highest:
                     highest = int(match.group(1))
                     highest_tag = tag
@@ -706,47 +726,6 @@ def check_tag_availability(state):
                 capture=True,
             )
             tag_avail[repo_name]["sha"] = sha
-
-    # Also check mender-client-subcomponents itself
-    tag_avail["mender-client-subcomponents"] = {}
-    try:
-        # Check if final tag exists
-        execute_git(
-            state,
-            "mender-client-subcomponents",
-            ["rev-parse", state["version"]],
-            capture=True,
-            capture_stderr=True,
-        )
-        # Final tag exists
-        tag_avail["mender-client-subcomponents"]["already_released"] = True
-        tag_avail["mender-client-subcomponents"]["build_tag"] = state["version"]
-    except subprocess.CalledProcessError:
-        # No final tag, look for build tags
-        tag_avail["mender-client-subcomponents"]["already_released"] = False
-
-        tags = execute_git(state, "mender-client-subcomponents", ["tag"], capture=True)
-        highest = -1
-        for tag in tags.split("\n"):
-            match = re.match("^%s-build([0-9]+)$" % re.escape(state["version"]), tag)
-            if match is not None and int(match.group(1)) > highest:
-                highest = int(match.group(1))
-                highest_tag = tag
-        if highest >= 0:
-            tag_avail["mender-client-subcomponents"]["build_tag"] = highest_tag
-
-    if tag_avail["mender-client-subcomponents"].get("build_tag") is not None:
-        sha = execute_git(
-            state,
-            "mender-client-subcomponents",
-            [
-                "rev-parse",
-                "--short",
-                tag_avail["mender-client-subcomponents"]["build_tag"] + "~0",
-            ],
-            capture=True,
-        )
-        tag_avail["mender-client-subcomponents"]["sha"] = sha
 
     if missing_repos:
         print("Error: missing repos directories.")
@@ -767,44 +746,36 @@ def report_release_state(state, tag_avail, preview_mode=False):
 
     print("Mender Client release: %s" % state["version"])
 
-    # Get unique repositories from JSON
-    repos = get_repos_from_current_json(state)
+    # Get all repositories including mender-client-subcomponents
+    all_repos = get_all_repos_including_subcomponents(state)
 
     fmt_str = "%-27s %-10s %-20s"
     print(fmt_str % ("REPOSITORY", "VERSION", "BUILD TAG"))
     print(fmt_str % ("", "", ""))
 
-    for repo_info in sorted(repos, key=lambda r: r["repo"]):
+    for repo_info in sorted(all_repos, key=lambda r: r["repo"]):
         repo_name = repo_info["repo"]
+        if repo_name == "mender-client-subcomponents":
+            repo_version = repo_info["version"]
+        else:
+            repo_version = state[repo_name]["version"]
 
         if tag_avail[repo_name]["already_released"]:
-            tag = state[repo_name]["version"]
+            tag = repo_version
         else:
             tag = tag_avail[repo_name].get("build_tag")
-            if tag is None:
+            # Special handling for mender-client-subcomponents in preview mode
+            if repo_name == "mender-client-subcomponents" and preview_mode:
+                tag = "<Release JSON will be created>"
+            elif tag is None:
                 tag = "<Needs a new build tag>"
             else:
-                tag = "%s (%s)" % (tag, tag_avail[repo_name]["sha"])
+                sha = tag_avail[repo_name].get("sha")
+                if sha:
+                    tag = "%s (%s)" % (tag, sha)
+                # else: tag without SHA (shouldn't normally happen)
 
-        print(fmt_str % (repo_name, state[repo_name]["version"], tag))
-
-    # Also show mender-client-subcomponents
-    if tag_avail.get("mender-client-subcomponents"):
-        if tag_avail["mender-client-subcomponents"]["already_released"]:
-            tag = state["version"]
-        else:
-            build_tag = tag_avail["mender-client-subcomponents"].get("build_tag")
-            sha = tag_avail["mender-client-subcomponents"].get("sha")
-
-            # In preview mode, always show placeholder (new JSON will be created)
-            # In normal mode, show current tag if it exists
-            if preview_mode:
-                tag = "<Release JSON will be created>"
-            elif build_tag and sha:
-                tag = "%s (%s)" % (build_tag, sha)
-            else:
-                tag = "<Release JSON will be created>"
-        print(fmt_str % ("mender-client-subcomponents", state["version"], tag))
+        print(fmt_str % (repo_name, repo_version, tag))
 
 
 def annotation_version(repo_name, tag_avail):
@@ -1182,12 +1153,17 @@ def purge_build_tags(state, tag_avail):
     print("Checking which remote tags need to be purged...")
     git_list = []
 
-    # Get unique repositories from JSON
-    repos = get_repos_from_current_json(state)
+    # Get all repositories including mender-client-subcomponents
+    all_repos = get_all_repos_including_subcomponents(state)
 
-    for repo_info in repos:
+    for repo_info in all_repos:
         repo_name = repo_info["repo"]
+        if repo_name == "mender-client-subcomponents":
+            repo_version = repo_info["version"]
+        else:
+            repo_version = state[repo_name]["version"]
         remote = find_upstream_remote(state, repo_name)
+
         remote_tag_list = [
             re.match(r".*refs/tags/(.*)", line).group(1)
             for line in execute_git(
@@ -1197,9 +1173,7 @@ def purge_build_tags(state, tag_avail):
         ]
         to_purge = []
         for tag in remote_tag_list:
-            if re.match(
-                "^%s-build[0-9]+$" % re.escape(state[repo_name]["version"]), tag
-            ):
+            if re.match("^%s-build[0-9]+$" % re.escape(repo_version), tag):
                 to_purge.append(tag)
         if len(to_purge) > 0:
             git_list.append(
@@ -1210,34 +1184,6 @@ def purge_build_tags(state, tag_avail):
                 )
             )
             git_list.append((state, repo_name, ["tag", "-d"] + to_purge))
-
-    # Also check mender-client-subcomponents for build tags to purge
-    remote = find_upstream_remote(state, "mender-client-subcomponents")
-    remote_tag_list = [
-        re.match(r".*refs/tags/(.*)", line).group(1)
-        for line in execute_git(
-            state,
-            "mender-client-subcomponents",
-            ["ls-remote", "--tags", remote],
-            capture=True,
-        ).split("\n")
-        if line
-    ]
-    to_purge = []
-    for tag in remote_tag_list:
-        if re.match("^%s-build[0-9]+$" % re.escape(state["version"]), tag):
-            to_purge.append(tag)
-    if len(to_purge) > 0:
-        git_list.append(
-            (
-                state,
-                "mender-client-subcomponents",
-                ["push", remote] + [":%s" % tag for tag in to_purge],
-            )
-        )
-        git_list.append(
-            (state, "mender-client-subcomponents", ["tag", "-d"] + to_purge)
-        )
 
     query_execute_git_list(git_list)
 
@@ -1253,25 +1199,32 @@ def create_release_branches(state, tag_avail):
     any_repo_needs_branch = False
     subcomponents_branch_created = False
 
-    # Get unique repositories from JSON
-    repos = get_repos_from_current_json(state)
+    # Get all repositories including mender-client-subcomponents
+    all_repos = get_all_repos_including_subcomponents(state)
 
-    for repo_info in repos:
+    for repo_info in all_repos:
         repo_name = repo_info["repo"]
+        if repo_name == "mender-client-subcomponents":
+            repo_version = repo_info["version"]
+        else:
+            repo_version = state[repo_name]["version"]
 
         if tag_avail[repo_name]["already_released"]:
             continue
 
         remote = find_upstream_remote(state, repo_name)
 
-        # Get base branch from JSON (e.g., "master" or "main")
-        base_branch = repo_info["version"]
+        # Determine base branch: subcomponents uses "main", others use version from JSON
+        if repo_name == "mender-client-subcomponents":
+            base_branch = "main"
+        else:
+            # Get base branch from JSON (e.g., "master" or "main")
+            base_branch = repo_info["version"]
 
         # Derive the branch we should follow from the version
         # E.g., version "5.0.3" -> branch "origin/5.0.x"
-        version = state[repo_name]["version"]
-        if re.match(r"^\d+\.\d+\.\d+", version):
-            parts = version.split(".")
+        if re.match(r"^\d+\.\d+\.\d+", repo_version):
+            parts = repo_version.split(".")
             branch_name = "%s.%s.x" % (parts[0], parts[1])
         else:
             # For non-standard versions, skip branch creation
@@ -1320,48 +1273,8 @@ def create_release_branches(state, tag_avail):
                     ],
                 )
             )
-            query_execute_git_list(cmd_list)
-
-    # Also check if mender-client-subcomponents needs a release branch
-    version = state["version"]
-    if re.match(r"^\d+\.\d+\.\d+", version):
-        parts = version.split(".")
-        branch_name = "%s.%s.x" % (parts[0], parts[1])
-        subcomp_remote = find_upstream_remote(state, "mender-client-subcomponents")
-        following_branch = "%s/%s" % (subcomp_remote, branch_name)
-
-        try:
-            execute_git(
-                state,
-                "mender-client-subcomponents",
-                ["rev-parse", following_branch],
-                capture=True,
-                capture_stderr=True,
-            )
-        except subprocess.CalledProcessError:
-            any_repo_needs_branch = True
-            print_line()
-            reply = ask(
-                (
-                    "mender-client-subcomponents does not have a branch '%s'. "
-                    + "Would you like to create it from '%s/main'? "
-                )
-                % (following_branch, subcomp_remote)
-            )
-            if reply.startswith("Y") or reply.startswith("y"):
-                cmd_list = []
-                cmd_list.append(
-                    (
-                        state,
-                        "mender-client-subcomponents",
-                        [
-                            "push",
-                            subcomp_remote,
-                            "%s/main:refs/heads/%s" % (subcomp_remote, branch_name),
-                        ],
-                    )
-                )
-                if query_execute_git_list(cmd_list):
+            if query_execute_git_list(cmd_list):
+                if repo_name == "mender-client-subcomponents":
                     subcomponents_branch_created = True
 
     if not any_repo_needs_branch:
