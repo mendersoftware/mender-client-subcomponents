@@ -35,6 +35,10 @@ CONVENTIONAL_COMMIT_REGEX = (
     r"(?:\(\w+\))?:.*"
 )
 
+# Always sign commits and tags
+DEFAULT_COMMIT_ARGS = ["commit", "--signoff", "--gpg-sign", "--message"]
+DEFAULT_TAG_ARGS = ["tag", "--sign", "--annotate", "--message"]
+
 
 class NotAVersionException(Exception):
     pass
@@ -1037,7 +1041,7 @@ def tag_and_push(state, tag_avail, next_tag_avail, final, build_number):
                 tmpdir,
                 ["add", os.path.join("subcomponents", "releases", json_filename)],
             ),
-            (state, tmpdir, ["commit", "-s", "-m", commit_message],),
+            (state, tmpdir, DEFAULT_COMMIT_ARGS + [commit_message]),
         ]
 
         if not query_execute_git_list(git_list):
@@ -1060,7 +1064,7 @@ def tag_and_push(state, tag_avail, next_tag_avail, final, build_number):
         execute_git(
             state,
             tmpdir,
-            ["tag", "-a", "-m", "Release %s" % subcomponents_tag, subcomponents_tag],
+            DEFAULT_TAG_ARGS + [f"Release {subcomponents_tag}", subcomponents_tag],
         )
 
         print()
@@ -1105,10 +1109,8 @@ def tag_and_push(state, tag_avail, next_tag_avail, final, build_number):
                 (
                     state,
                     repo_name,
-                    [
-                        "tag",
-                        "-a",
-                        "-m",
+                    DEFAULT_TAG_ARGS
+                    + [
                         annotation_version(repo_name, next_tag_avail),
                         next_tag_avail[repo_name]["build_tag"],
                         next_tag_avail[repo_name]["sha"],
@@ -1367,7 +1369,7 @@ def create_and_commit_json(
                 tmpdir,
                 ["add", os.path.join("subcomponents", "releases", json_filename)],
             ),
-            (state, tmpdir, ["commit", "-s", "-m", commit_msg]),
+            (state, tmpdir, DEFAULT_COMMIT_ARGS + [commit_msg]),
         ]
 
         if not query_execute_git_list(git_list):
