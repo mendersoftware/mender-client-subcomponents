@@ -1,0 +1,45 @@
+{
+  "version": "6.0.0-build4",
+  "components": [
+    {
+      "name": "mender-auth",
+      "version": "5.1.0-build4",
+      "source": "github.com/mendersoftware/mender"
+    },
+    {
+      "name": "mender-update",
+      "version": "5.1.0-build4",
+      "source": "github.com/mendersoftware/mender"
+    },
+    {
+      "name": "mender-connect",
+      "version": "3.0.0-build4",
+      "source": "github.com/mendersoftware/mender-connect"
+    },
+    {
+      "name": "mender-monitor",
+      "version": "1.5.0-build4",
+      "source": "github.com/mendersoftware/monitor-client"
+    },
+    {
+      "name": "mender-flash",
+      "version": "1.1.0-build4",
+      "source": "github.com/mendersoftware/mender-flash"
+    },
+    {
+      "name": "mender-configure",
+      "version": "1.2.0-build4",
+      "source": "github.com/mendersoftware/mender-configure-module"
+    },
+    {
+      "name": "mender-binary-delta",
+      "version": "1.5.3",
+      "source": "github.com/mendersoftware/mender-binary-delta"
+    },
+    {
+      "name": "mender-container-modules",
+      "version": "1.0.0-build4",
+      "source": "github.com/mendersoftware/mender-container-modules"
+    }
+  ]
+}
