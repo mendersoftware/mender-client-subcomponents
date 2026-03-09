@@ -1,8 +1,48 @@
+# Mender Client 6.0.x
+
+| Repository | Version |
+| --- | --- |
+| [mender](https://github.com/mendersoftware/mender) | 5.1.x |
+| [mender-connect](https://github.com/mendersoftware/mender-connect) | 3.0.x |
+| [monitor-client](https://github.com/mendersoftware/monitor-client) | 1.5.x |
+| [mender-flash](https://github.com/mendersoftware/mender-flash) | 1.1.x |
+| [mender-configure-module](https://github.com/mendersoftware/mender-configure-module) | 1.1.x |
+| [mender-binary-delta](https://github.com/mendersoftware/mender-binary-delta) | 1.5.x |
+| [mender-container-modules](https://github.com/mendersoftware/mender-container-modules) | 1.0.x |
+
+## mender 5.1.x (2026-03-09)
+
+No changelog entries found.
+
+## mender-connect 3.0.x (2026-02-27)
+
+No changelog entries found.
+
+## monitor-client 1.5.x (2026-02-23)
+
+No changelog entries found.
+
+## mender-flash 1.1.x (2026-02-27)
+
+No changelog entries found.
+
+## mender-configure-module 1.1.x (2026-02-18)
+
+No changelog entries found.
+
+## mender-binary-delta 1.5.x (2026-02-02)
+
+No changelog entries found.
+
+## mender-container-modules 1.0.x (2026-01-13)
+
+No changelog entries found.
 
 ---
-## Older releases
 
-Previous to Mender Client 6.0, the release notes & changelog can be found in the pages for the individual components:
+# Older releases (pre Mender Client 6.0)
+
+The release notes & changelogs can be found in the pages for the individual components:
 
 * [mender](20.Mender-Client/docs.md)
 * [mender-connect](21.mender-connect/docs.md)
@@ -11,7 +51,7 @@ Previous to Mender Client 6.0, the release notes & changelog can be found in the
 * [mender-binary-delta](50.mender-binary-delta/docs.md)
 * [monitor-client](51.monitor-client/docs.md)
 
-The following release notes & changelog are for `mender` repository alone, prior to Mender Client 6.0
+The following release notes & changelogs are for the `mender` repository alone.
 
 ## mender 5.0.3
 
