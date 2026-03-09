@@ -1,8 +1,397 @@
+# Mender Client 6.0.x
+
+| Repository | Version |
+| --- | --- |
+| [mender](https://github.com/mendersoftware/mender) | 5.1.x |
+| [mender-connect](https://github.com/mendersoftware/mender-connect) | 3.0.x |
+| [monitor-client](https://github.com/mendersoftware/monitor-client) | 1.5.x |
+| [mender-flash](https://github.com/mendersoftware/mender-flash) | 1.1.x |
+| [mender-configure-module](https://github.com/mendersoftware/mender-configure-module) | 1.1.x |
+| [mender-binary-delta](https://github.com/mendersoftware/mender-binary-delta) | 1.5.x |
+| [mender-container-modules](https://github.com/mendersoftware/mender-container-modules) | 1.0.x |
+
+## mender 5.1.x (2026-09-02)
+
+### 5.1.x - 2026-09-02
+
+
+#### Bug fixes
+
+
+- *(auth)* Fix segfault when dbus becomes unavailable and available again
+([MEN-9246](https://northerntech.atlassian.net/browse/MEN-9246)) ([7243c59](https://github.com/mendersoftware/mender/commit/7243c59255b211f8759b7fcac81db05cdb80d73b)) 
+
+
+
+
+
+  Change mender::api::HTTPClient::AsyncCall to void and handle all error callbacks asynchronously.
+  Previously, errors in WithToken from StartWatchingTokenSignal were synchronous, and errors from
+  GetJwtToken were asynchronous, but still returned an error. This caused the caller to not know
+  wheter a callback would be called by AsyncCall, ultimately leading to the callback being called
+  multiple times.
+  Having AsyncCall not return anything, and always call the callback on error makes the
+  contract cleaner. Each caller now knows that if there's an error in AsyncCall, whether
+  it is immediate, or happens later after reading some data, the callback will be run
+  exactly once.
+
+- *(http)* Time out stalled transactions without killing switched protocols
+([MEN-9433](https://northerntech.atlassian.net/browse/MEN-9433)[MEN-10031](https://northerntech.atlassian.net/browse/MEN-10031)) ([d417a2a](https://github.com/mendersoftware/mender/commit/d417a2aadfcbc6fb4a4d822710523671a6c355ec)) 
+
+
+
+
+
+
+
+  A server that accepts a request and never answers left the response read
+  outstanding forever, wedging the client until restart. Arm Beast's stream timeout
+  per operation and disarm it at the 101 Switching Protocols handover -- leaving it
+  armed there closed mender-connect's WebSocket after five minutes and got the
+  previous attempt reverted (MEN-9433).
+
+- *(modules-artifact-gen)* Fail early when mender-artifact produces an invalid artifact
+ ([80e7aa6](https://github.com/mendersoftware/mender/commit/80e7aa6139ce03cbe3d48bbfeae752e580ed13e0)) 
+
+
+
+
+
+- *(modules-artifact-gen)* Always remove temporary files
+ ([be174ef](https://github.com/mendersoftware/mender/commit/be174ef06ef884610622c932a0df2dee14bfb671)) 
+
+
+
+
+
+- *(update-modules)* Fail the install when the backup fails
+([MEN-10021](https://northerntech.atlassian.net/browse/MEN-10021)) ([9c64ef1](https://github.com/mendersoftware/mender/commit/9c64ef189bb11c867d697b01f5ccfd28c916939c)) 
+
+
+
+
+
+
+
+  `ret=$?` was read inside `if ! <backup>; then`, where `$?` holds the status
+  of the negated pipeline and is therefore always 0. Both modules exited 0
+  before applying the payload, so a failed install was reported to the server
+  as successful: the destination was left untouched while the new software
+  version was recorded for it. Capture the status from the command itself
+  instead.
+  
+  The directory module is the more exposed of the two, since it backs up the
+  whole destination directory, so any unrelated file growing there can exhaust
+  the data partition. Reported from the field with a multi-GB core dump.
+  
+  Add a pytest suite for the shipped update module scripts, alongside the
+  existing one for the artifact generators, covering both a failing backup and
+  a successful install for each module. Ignore the Python test caches while
+  here, since the new suite is the second pytest directory in the tree.
+
+- Don't retry status update on 413
+([ME-616](https://northerntech.atlassian.net/browse/ME-616)) ([e13437d](https://github.com/mendersoftware/mender/commit/e13437df32bb2a1e46e7c9abf706628728d699eb)) 
+
+
+
+
+- Handle first timestamp in deployment logs more carefully
+([MEN-9427](https://northerntech.atlassian.net/browse/MEN-9427)) ([68ab41e](https://github.com/mendersoftware/mender/commit/68ab41e3a70410690c6f0668e08e718e90816c25)) 
+
+
+
+
+
+
+  Depending on the system and build configuration, the timestamps
+  in logs can use lower (likely) or higher (unlikely) time
+  resolution than expected (nanoseconds). So in case of a
+  deployment failure with corrupted logs, when using the first
+  timestamp as a replacement in the extra `(THE ORIGINAL LOGS
+  CONTAINED INVALID ENTRIES)` log entry, care must be taken to make
+  sure the extra log entry still has a valid timestamp and that the
+  result is valid JSON.
+- Sort inventory generator scripts before running them
+([MEN-9635](https://northerntech.atlassian.net/browse/MEN-9635)) ([a5fcec1](https://github.com/mendersoftware/mender/commit/a5fcec17d2975553f54e7a70cfcec0042c78a1eb)) 
+
+
+
+
+
+
+  So that the results are consistent and don't depend on directory
+  iteration ordering.
+- Fail when device tier is invalid
+([ME-636](https://northerntech.atlassian.net/browse/ME-636)) ([590282f](https://github.com/mendersoftware/mender/commit/590282f3630acd9a6fd4b2109ca61b9662f72ab7)) 
+
+
+
+
+
+
+  DeviceTier is one of the configuration options but it is critical
+  for how device is recognized by the server. When we will fail
+  parsing it out of the configuration we should fail instead to
+  switching to the `standard` device tier.
+- Ensure limited permissions of mender-inventory-geo cache files
+([MEN-9752](https://northerntech.atlassian.net/browse/MEN-9752)) ([64584e2](https://github.com/mendersoftware/mender/commit/64584e2a3bc3f1874258dc21ddc84bfdeadedba9)) 
+
+
+
+
+
+
+  The /tmp/mender/inventory-geo cache file can potentially contain
+  sensitive data and there's no reason for it to have 644
+  permissions.
+  
+  By using `umask 077` we can easily ensure that any files created
+  by the script are only user/owner-accessible.
+- Default RetryPollIntervalSeconds to 300 seconds
+([MEN-9719](https://northerntech.atlassian.net/browse/MEN-9719)) ([9fc39d7](https://github.com/mendersoftware/mender/commit/9fc39d7121cea761da12796a13a94eaa15266b26)) 
+
+
+
+
+
+
+  RetryPollIntervalSeconds defaulted to 0 seconds, meaning any config not
+  setting RetryPollIntervalSeconds would retry polling with a 0 second
+  delay. Default to 300 seconds, matching the Go client's fallback for unset
+  values.
+- Ensure corrent order of globals initalization
+([MEN-9878](https://northerntech.atlassian.net/browse/MEN-9878)) ([ca57f7b](https://github.com/mendersoftware/mender/commit/ca57f7b72637828a78e41cfa1990a1a65c7db7d3)) 
+
+
+
+
+- Report download failure when DownloadResumerClient gives up mid-stream
+([MEN-9954](https://northerntech.atlassian.net/browse/MEN-9954)) ([19af738](https://github.com/mendersoftware/mender/commit/19af738752ae4c3e8a013896474d120fca2c616d)) 
+
+
+
+
+
+
+
+  When there are network issues during Artifact download and the
+  HTTP download resumer exhausts its retry backoff, the only way to
+  deliver the error to the state machine is through the HTTP **body
+  reader's** handler because the **body handler** passed to the
+  DownloadResumerClient is only called when all body data is
+  fetched which normally happens in a completely different state
+  than the one that starts the download and thus the
+  UpdateDownloadState doesn't handle any errors in it.
+  
+  Add a Fail() function to the body reader and use it to make sure
+  it calls its handler with the respective error.
+  
+  Also add a comment about how the DownloadResumerClient is used.
+- Don't re-sanitize logs during upload
+([MEN-10017](https://northerntech.atlassian.net/browse/MEN-10017)) ([5465efd](https://github.com/mendersoftware/mender/commit/5465efd5766ce44ff0d5906de1087391ca8f1db2)) 
+
+
+
+
+
+
+
+  Calling SanitizeLogs() as part of Rewind would invalidate the previous
+  Content-Length calculation if the log has grown in the meantime. This
+  would cause the server to reject the log upload with HTTP 400:
+  unexpected EOF.
+  
+  The log file can grow between computing the Content-Length and streaming
+  the body, because the deployment keeps logging to it while the upload is
+  in flight.
+
+
+
+
+#### Documentation
+
+
+- Update contributing guide
+([QA-1517](https://northerntech.atlassian.net/browse/QA-1517)) ([9372fc1](https://github.com/mendersoftware/mender/commit/9372fc105657240a2a512b7cd221d35b1569715d)) 
+
+
+
+
+
+  To remove custom extensions of conventional commits standard.
+
+
+
+
+#### Features
+
+
+- Large deployment logs are now trimmed to be accepted by the server
+([MEN-9415](https://northerntech.atlassian.net/browse/MEN-9415)) ([d870064](https://github.com/mendersoftware/mender/commit/d870064d0d75e1d73f3a6c4e11bea4ce4a351b9b)) 
+
+
+
+
+
+
+  Deployment logs larger than 1 MiB are rejected by the
+  server which leads to two issues:
+  
+  - excessive bandwith consumption when uploading such large logs
+    only to be thrown away, and
+  
+  - no deployment logs for particular device and particular failed
+    deployment available at the server at all.
+  
+  To prevent this, the client now trims large deployment logs and
+  only sends the biggest possible part of the logs from their end.
+
+## mender-connect 3.0.x (2026-08-18)
+
+### 3.0.x - 2026-08-18
+
+
+#### Bug fixes
+
+
+- Do not block the message loop when a late pong arrives
+ ([58d6a76](https://github.com/mendersoftware/mender-connect/commit/58d6a763eeb674174fcbeb7129e9940ec8cbc82c)) 
+
+
+
+
+
+
+  The healthcheck goroutine stops reading MenderShellSession.pong the
+  moment it enters the timeout branch of its select, but the session stays
+  reachable through MenderShellSessionGetById until MenderShellStopById
+  removes it. Removal happens no earlier than four seconds later because
+  procps.TerminateAndWait sleeps 2s + 2s unconditionally. A pong that
+  arrives in that window finds the session, and HealthcheckPong blocks
+  forever on an unbuffered channel that no longer has a reader.
+  
+  HealthcheckPong is called synchronously from routeMessagePongShell,
+  which runs on the daemon's messageLoop goroutine. The block therefore
+  stops the whole daemon: it stops reading the websocket, stops logging
+  and never reconnects. The process stays alive, so systemd does not
+  restart it.
+  
+  MenderShellStopById also returns without removing the session when
+  StopShell fails and the shell process is still alive, which leaves the
+  session reachable indefinitely and makes the same block reachable
+  without any race.
+  
+  Give the channel a single slot and make the send non-blocking. A pong
+  only signals that the peer is alive, so holding one is enough and
+  dropping a second one changes nothing. The buffer keeps a pong that
+  arrives while the healthcheck is momentarily outside its select, and the
+  default case keeps the sender from blocking once the reader is gone.
+  
+  Add a regression test that delivers a pong inside the removal window,
+  plus a negative control showing that a pong delivered after the removal
+  is rejected with ErrSessionNotFound.
+
+## monitor-client 1.5.x (2026-07-31)
+
+No changelog entries found.
+
+## mender-flash 1.1.x (2026-02-27)
+
+No changelog entries found.
+
+## mender-configure-module 1.1.x (2026-05-28)
+
+No changelog entries found.
+
+## mender-binary-delta 1.5.x (2026-08-06)
+
+### 1.5.x - 2026-08-06
+
+
+#### Build
+
+
+- Update cloning link for cmocka, whose original has broken.
+ ([7cb08af](https://github.com/mendersoftware/mender-binary-delta/commit/7cb08af08dcb9588ce3836fdbdb09e54760e2909))
+
+## mender-container-modules 1.0.x (2026-09-08)
+
+### 1.0.x - 2026-09-08
+
+
+#### Bug fixes
+
+
+- Cd into manifest dir beforing listing running containers
+([MEN-9641](https://northerntech.atlassian.net/browse/MEN-9641)) ([0aa83f8](https://github.com/mendersoftware/mender-container-modules/commit/0aa83f8bacad73c072e66531409873425bc6559a)) 
+
+
+
+
+
+  Fix an issue where docker-compose v1 can't find manifest files for a
+  composition because we don't cd into the manifest directory.
+- Start compositions from their final 'current' location
+([MEN-10102](https://northerntech.atlassian.net/browse/MEN-10102)) ([30d6aec](https://github.com/mendersoftware/mender-container-modules/commit/30d6aec8189bbb45bd50b2f099ffe74681ebf60d)) 
+
+
+
+
+
+
+  Docker resolves relative bind-mount paths at container creation and stores
+  them as absolute paths in the created containers. Starting the composition
+  from 'new/' and renaming it to 'current/' at commit therefore left the
+  containers pointing at a dead path. Install into 'current/' directly and
+  track the uncommitted state with a marker file instead.
+- Match actual provides keys in clears_provides
+([MEN-10103](https://northerntech.atlassian.net/browse/MEN-10103)) ([22e2526](https://github.com/mendersoftware/mender-container-modules/commit/22e25262d8443c4ab48764866591b8f94fb7a3d6)) 
+
+
+
+
+
+
+  Software names use dots, not underscores, so the glob never matched
+  anything.
+- Only read ${PERSISTENT_STORE}/cleanup/image_ids in cleanup if it exists
+([MEN-10101](https://northerntech.atlassian.net/browse/MEN-10101)) ([6c3bb9e](https://github.com/mendersoftware/mender-container-modules/commit/6c3bb9ed43638c9a8890d0a4c5e48086b3108700)) 
+
+
+
+
+
+
+  To avoid unnecessary failures when cleanup is called without the
+  file being populated before (e.g. when a download is cancelled).
+- Skip non-file entries when collecting image IDs
+([MEN-10101](https://northerntech.atlassian.net/browse/MEN-10101)) ([0483b9c](https://github.com/mendersoftware/mender-container-modules/commit/0483b9c1711680e197a03b0b7bdaa98d364f4108)) 
+
+
+
+
+
+- Retag images from old composition in case of a rollback
+([MEN-10114](https://northerntech.atlassian.net/browse/MEN-10114)) ([4dd5782](https://github.com/mendersoftware/mender-container-modules/commit/4dd57829330b9cb5d497bdd5ffe8957a3b115612)) 
+
+
+
+
+
+
+
+  Loading a newer artifact's images can move a tag (e.g. "myimage:latest")
+  onto the newly loaded image, so a previous composition's manifest tags
+  no longer point at the images it actually needs when rolling back to it.
+  Record the tag next to each image ID in image_ids and re-apply it before
+  starting the restored composition. Also handle compositions installed by
+  an older version of this script whose image_ids only contain bare IDs.
 
 ---
-## Older releases
 
-Previous to Mender Client 6.0, the release notes & changelog can be found in the pages for the individual components:
+# Older releases (pre Mender Client 6.0)
+
+The release notes & changelogs can be found in the pages for the individual components:
 
 * [mender](20.Mender-Client/docs.md)
 * [mender-connect](21.mender-connect/docs.md)
@@ -11,7 +400,7 @@ Previous to Mender Client 6.0, the release notes & changelog can be found in the
 * [mender-binary-delta](50.mender-binary-delta/docs.md)
 * [monitor-client](51.monitor-client/docs.md)
 
-The following release notes & changelog are for `mender` repository alone, prior to Mender Client 6.0
+The following release notes & changelogs are for the `mender` repository alone.
 
 ## mender 5.0.3
 
