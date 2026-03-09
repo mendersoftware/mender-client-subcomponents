@@ -7,8 +7,8 @@
   "properties": {
     "version": {
       "type": "string",
-      "description": "The release version identifier (e.g., tag '1.2.3', or 'next')",
-      "pattern": "^(next|\\d+\\.\\d+\\.\\d+(-build\\d+)?)$"
+      "description": "The release version identifier (e.g., tag '1.2.3', maintenance branch '1.2.x', or 'next')",
+      "pattern": "^(next|\\d+\\.\\d+\\.\\d+(-build\\d+)?|\\d+\\.\\d+\\.x)$"
     },
     "components": {
       "type": "array",
