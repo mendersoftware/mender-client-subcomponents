@@ -55,6 +55,9 @@ publish:image:mender:
 publish:image-multiplatform:
   rules:
     - when: never
+publish:image-multiplatform:mender:
+  rules:
+    - when: never
 
 .test:build:inventory-script:base:
   stage: test
