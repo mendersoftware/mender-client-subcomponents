@@ -2,21 +2,21 @@
 
 # Generate package conflicts string from release JSON file
 #
-# Usage: generate-conflicts <release-file> [separator] [output-file]
+# Usage: generate-conflicts <release-file> [format] [output-file]
 #
 # Arguments:
 #   release-file  Path to release JSON file (required)
-#   separator     Separator between conflict entries (optional, default: empty string)
+#   format        rpm or deb format (optional, default: rpm)
 #   output-file   Output file path (optional, default: stdout)
 #
 # Example:
 #   ./generate-conflicts subcomponents/releases/5.0.0.json
-#   ./generate-conflicts subcomponents/releases/5.0.0.json ", " build/conflicts
+#   ./generate-conflicts subcomponents/releases/5.0.0.json "deb" build/conflicts
 
 set -e
 
 RELEASE_FILE="$1"
-SEPARATOR="${2:-}"
+FORMAT="${2:-rpm}"
 OUTPUT_FILE="${3:-}"
 
 # Check if release file argument is provided
@@ -32,6 +32,22 @@ if [ ! -f "$RELEASE_FILE" ]; then
     exit 1
 fi
 
+# Set separator and less-than operator based on format
+case "$FORMAT" in
+    rpm)
+        SEPARATOR=""
+        LESSTHAN="<"
+        ;;
+    deb)
+        SEPARATOR=","
+        LESSTHAN="<<"
+        ;;
+    *)
+        echo "Error: Invalid format '$FORMAT'. Must be 'rpm' or 'deb'" >&2
+        exit 1
+        ;;
+esac
+
 # Generate conflicts string
 conflicts=$(jq -r '.components[] | "\(.name) \(.version)"' "$RELEASE_FILE" | while read name version; do
     # Strip pre-release suffix (e.g., "5.1.0-build2" -> "5.1.0")
@@ -42,30 +58,12 @@ conflicts=$(jq -r '.components[] | "\(.name) \(.version)"' "$RELEASE_FILE" | whi
         # Parse semantic version into components
         IFS='.' read -r major minor patch <<< "$base_version"
 
-        # Calculate previous version (decrement patch)
-        if [ "$patch" -eq 0 ]; then
-            # Special case: if patch is 0, need to handle differently
-            if [ "$minor" -eq 0 ]; then
-                # If both patch and minor are 0, decrement major
-                prev_major=$((major - 1))
-                prev_version="$prev_major.99.99"
-            else
-                # Decrement minor, set patch to 99
-                prev_minor=$((minor - 1))
-                prev_version="$major.$prev_minor.99"
-            fi
-        else
-            # Normal case: just decrement patch
-            prev_patch=$((patch - 1))
-            prev_version="$major.$minor.$prev_patch"
-        fi
-
         # Calculate next version (increment patch)
         next_patch=$((patch + 1))
         next_version="$major.$minor.$next_patch"
 
-        # Output with <= and >= operators for semantic versions
-        echo -n "$name (<= $prev_version)$SEPARATOR $name (>= $next_version)$SEPARATOR "
+        # Conflict with less than the base version and more or equal to the next version
+        echo -n "$name ($LESSTHAN $base_version)$SEPARATOR $name (>= $next_version)$SEPARATOR "
     else
         # For non-semantic versions (e.g., "master", "main"), fail with error
         echo "Error: Conflicts generation is only for semantic versions. Component '$name' has non-semantic version '$version'" >&2
