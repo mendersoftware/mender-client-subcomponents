@@ -2,21 +2,21 @@
 
 # Generate package conflicts string from release JSON file
 #
-# Usage: generate-conflicts <release-file> [separator] [output-file]
+# Usage: generate-conflicts <release-file> [format] [output-file]
 #
 # Arguments:
 #   release-file  Path to release JSON file (required)
-#   separator     Separator between conflict entries (optional, default: empty string)
+#   format        rpm or deb format (optional, default: rpm)
 #   output-file   Output file path (optional, default: stdout)
 #
 # Example:
 #   ./generate-conflicts subcomponents/releases/5.0.0.json
-#   ./generate-conflicts subcomponents/releases/5.0.0.json ", " build/conflicts
+#   ./generate-conflicts subcomponents/releases/5.0.0.json "deb" build/conflicts
 
 set -e
 
 RELEASE_FILE="$1"
-SEPARATOR="${2:-}"
+FORMAT="${2:-rpm}"
 OUTPUT_FILE="${3:-}"
 
 # Check if release file argument is provided
@@ -31,6 +31,22 @@ if [ ! -f "$RELEASE_FILE" ]; then
     echo "Error: Release file $RELEASE_FILE not found" >&2
     exit 1
 fi
+
+# Set separator and less-than operator based on format
+case "$FORMAT" in
+    rpm)
+        SEPARATOR=""
+        LESSTHAN="<"
+        ;;
+    deb)
+        SEPARATOR=","
+        LESSTHAN="<<"
+        ;;
+    *)
+        echo "Error: Invalid format '$FORMAT'. Must be 'rpm' or 'deb'" >&2
+        exit 1
+        ;;
+esac
 
 # Generate conflicts string
 conflicts=$(jq -r '.components[] | "\(.name) \(.version)"' "$RELEASE_FILE" | while read name version; do
@@ -47,7 +63,7 @@ conflicts=$(jq -r '.components[] | "\(.name) \(.version)"' "$RELEASE_FILE" | whi
         next_version="$major.$minor.$next_patch"
 
         # Conflict with less than the base version and more or equal to the next version
-        echo -n "$name (< $base_version)$SEPARATOR $name (>= $next_version)$SEPARATOR "
+        echo -n "$name ($LESSTHAN $base_version)$SEPARATOR $name (>= $next_version)$SEPARATOR "
     else
         # For non-semantic versions (e.g., "master", "main"), fail with error
         echo "Error: Conflicts generation is only for semantic versions. Component '$name' has non-semantic version '$version'" >&2

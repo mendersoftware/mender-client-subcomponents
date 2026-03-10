@@ -9,7 +9,7 @@ DESTDIR ?= /
 prefix ?= $(DESTDIR)
 inventorydir ?= /usr/share/mender/inventory
 
-CONFLICTS_SEP ?=
+CONFLICTS_FORMAT ?= rpm
 CONFLICTS_FILE ?= build/conflicts
 
 help:
@@ -67,7 +67,7 @@ generate-conflicts:
 		echo "Warning: No RELEASE specified, generating empty conflicts file"; \
 		echo "" > $(CONFLICTS_FILE); \
 	else \
-		./generate-conflicts subcomponents/releases/$(RELEASE).json "$(CONFLICTS_SEP)" $(CONFLICTS_FILE); \
+		./generate-conflicts subcomponents/releases/$(RELEASE).json "$(CONFLICTS_FORMAT)" $(CONFLICTS_FILE); \
 	fi
 
 check-dependencies:
