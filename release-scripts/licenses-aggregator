@@ -1874,8 +1874,7 @@ for component in sorted_licenses:
     )
     component_texts.append(text)
 
-output_text = "Third party licenses used in Mender Client.\n"
-output_text += separator
+output_text = separator
 output_text += separator.join(component_texts)
 
 # Write to file or stdout
