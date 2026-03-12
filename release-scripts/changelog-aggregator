@@ -317,8 +317,11 @@ version_group.add_argument(
 )
 version_group.add_argument(
     "--version-next",
-    action="store_true",
-    help="Generate changelog from latest release to next (uses next.json)",
+    nargs="?",
+    const="next",
+    default=None,
+    metavar="TARGET",
+    help="Generate changelog from latest release to target (default: next.json, 'main' is alias to next, or specify custom like '6.0.x' for 6.0.x.json)",
 )
 parser.add_argument(
     "--repos-dir", required=True, help="Directory containing checked-out repositories",
@@ -332,7 +335,11 @@ args = parser.parse_args()
 if args.version_range:
     from_version, to_version = parse_version_range(args.version_range)
 else:  # args.version_next
-    to_version = "next"
+    # Handle optional parameter for --version-next
+    target = args.version_next
+    if target == "main":
+        target = "next"
+    to_version = target
     from_version = find_latest_release()
     print(f"Determined version range: {from_version}..{to_version}\n", file=sys.stderr)
 
