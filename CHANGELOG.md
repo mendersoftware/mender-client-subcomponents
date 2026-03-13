@@ -1,3 +1,486 @@
+# Mender Client next
+
+| Repository | Version |
+| --- | --- |
+| [mender](https://github.com/mendersoftware/mender) | master |
+| [mender-connect](https://github.com/mendersoftware/mender-connect) | master |
+| [monitor-client](https://github.com/mendersoftware/monitor-client) | master |
+| [mender-flash](https://github.com/mendersoftware/mender-flash) | master |
+| [mender-configure-module](https://github.com/mendersoftware/mender-configure-module) | master |
+| [mender-binary-delta](https://github.com/mendersoftware/mender-binary-delta) | master |
+| [mender-container-modules](https://github.com/mendersoftware/mender-container-modules) | main |
+
+## mender master (2026-03-11)
+
+### master - 2026-03-11
+
+
+#### Bug fixes
+
+
+- Don't retry status update on 413
+([ME-616](https://northerntech.atlassian.net/browse/ME-616)) ([682e480](https://github.com/mendersoftware/mender/commit/682e480733c9e6fa9cf6fea5f40768cf0ba92e3a)) 
+
+
+
+
+
+
+
+
+#### Documentation
+
+
+- Update contributing guide
+([QA-1517](https://northerntech.atlassian.net/browse/QA-1517)) ([d6987de](https://github.com/mendersoftware/mender/commit/d6987de180d347eab02fd913264bc76b86a84d07)) 
+
+
+
+
+
+  To remove custom extensions of conventional commits standard.
+
+## mender-connect master (2026-03-11)
+
+No changelog entries found.
+
+## monitor-client master (2026-03-11)
+
+No changelog entries found.
+
+## mender-flash master (2026-03-11)
+
+No changelog entries found.
+
+## mender-configure-module master (2026-03-11)
+
+### master - 2026-03-11
+
+
+#### Bug fixes
+
+
+- Make systemd installation systemd_unitdir aware
+ ([758d25f](https://github.com/mendersoftware/mender-configure-module/commit/758d25f2b662c0ba2f20dbc6552c0daa6af1cc5f)) 
+
+
+
+
+
+- Exit with returncode 0 if no jwt token is obtained over dbus
+([MEN-8591](https://northerntech.atlassian.net/browse/MEN-8591)) ([7bcd1b7](https://github.com/mendersoftware/mender-configure-module/commit/7bcd1b7f33a4c9dc8cf3970e2da27fe38bf32277)) 
+
+
+
+
+
+
+  `mender-inventory-mender-configure` produces an error when failing to
+  fetch the JWT token over DBus. If we exit with 1 mender-update will log:
+  ```
+  raspberrypi mender-update[1070]: An authentication token could not be obtained over DBus.
+  mender-update[1029]: record_id=3 severity=error time="2025-Jun-12 21:53:25.802076" name="Global" msg="'/usr/share/mender/inventory/mender-inventory-mender-configure' failed: Process...
+  ```
+  Now it will log:
+  `raspberrypi mender-update[1070]: mender-inventory-mender-configure: An authentication token could not be obtained over DBus.`
+- Fixed outdated LED-path for raspberrypi
+([MEN-9002](https://northerntech.atlassian.net/browse/MEN-9002)) ([40a442c](https://github.com/mendersoftware/mender-configure-module/commit/40a442c660070ed9a0393410b4168f942e8c8782)) 
+
+
+
+
+- Fixed on/off arguments in LED demo
+([MEN-9375](https://northerntech.atlassian.net/browse/MEN-9375)) ([914a46a](https://github.com/mendersoftware/mender-configure-module/commit/914a46a62a3ec44c93fb0c438b22191f762e368a)) 
+
+
+
+
+
+
+
+
+#### Features
+
+
+- Mender-configure requests JWT token when needed
+([MEN-7732](https://northerntech.atlassian.net/browse/MEN-7732)) ([00c6064](https://github.com/mendersoftware/mender-configure-module/commit/00c60647636abe169879ac843fb204c1fa883fda)) 
+
+
+
+
+
+
+  If the token is invalid or inexistant, mender-configure will fetch a new Jwt Token.
+  Mender configure will listen to the dbus-monitor for a Jwt token state change. If token is received, it will immediately get the new token and continue the execution of the program. If the token is not received within 5 seconds, the program times out.
+
+
+
+
+#### Security
+
+
+- Bump tests/unit/shunit2 from `47be8b2` to `3334e53`
+ ([c3d9c66](https://github.com/mendersoftware/mender-configure-module/commit/c3d9c669875243236d19bcbe025a02e1c11f90bf)) 
+
+
+
+
+  Bumps [tests/unit/shunit2](https://github.com/kward/shunit2) from `47be8b2` to `3334e53`.
+  - [Release notes](https://github.com/kward/shunit2/releases)
+  - [Commits](https://github.com/kward/shunit2/compare/47be8b23a46a7897e849f1841f0fb704d34d0f6e...3334e53047ad143669870a9c223b70a81156533a)
+  
+  updated-dependencies:
+  - dependency-name: tests/unit/shunit2
+    dependency-type: direct:production
+  ...
+- Bump tests/integration/mender_test_containers
+ ([9f61038](https://github.com/mendersoftware/mender-configure-module/commit/9f6103897189e65d823ce3a9a429524b0e7d9407)) 
+
+
+
+
+  Bumps [tests/integration/mender_test_containers](https://github.com/mendersoftware/mender-test-containers) from `222916a` to `cc27472`.
+  - [Commits](https://github.com/mendersoftware/mender-test-containers/compare/222916ae5b0632521139170cc4410d1242c3751d...cc27472c35c41d9fe2614f37d54bc91ccfc2f4f6)
+  
+  updated-dependencies:
+  - dependency-name: tests/integration/mender_test_containers
+    dependency-type: direct:production
+  ...
+- Bump tests/integration/mender_integration
+ ([df654b9](https://github.com/mendersoftware/mender-configure-module/commit/df654b971e31b4c42d7f26c734277b564ec9f892)) 
+
+
+
+
+  Bumps [tests/integration/mender_integration](https://github.com/mendersoftware/integration) from `e0ddb9f` to `ca37b76`.
+  - [Commits](https://github.com/mendersoftware/integration/compare/e0ddb9f641912775e81953a24002bdc406e8338f...ca37b7694c40baf77ba3837f5a1398ceafe2ee54)
+  
+  updated-dependencies:
+  - dependency-name: tests/integration/mender_integration
+    dependency-type: direct:production
+  ...
+- Bump tests/unit/shunit2 from `3334e53` to `da1e19d`
+ ([a81e1b3](https://github.com/mendersoftware/mender-configure-module/commit/a81e1b31e29a0da53da25d4eaee2a329d402db4a)) 
+
+
+
+
+  Bumps [tests/unit/shunit2](https://github.com/kward/shunit2) from `3334e53` to `da1e19d`.
+  - [Release notes](https://github.com/kward/shunit2/releases)
+  - [Commits](https://github.com/kward/shunit2/compare/3334e53047ad143669870a9c223b70a81156533a...da1e19de845a77628d9684e609cc0f8160782c68)
+  
+  updated-dependencies:
+  - dependency-name: tests/unit/shunit2
+    dependency-type: direct:production
+  ...
+- Bump tests/unit/shunit2 from `da1e19d` to `100ffe4`
+ ([79785c5](https://github.com/mendersoftware/mender-configure-module/commit/79785c5deba85596741e912e7e8c0326d9d7ee56)) 
+
+
+
+
+  Bumps [tests/unit/shunit2](https://github.com/kward/shunit2) from `da1e19d` to `100ffe4`.
+  - [Release notes](https://github.com/kward/shunit2/releases)
+  - [Commits](https://github.com/kward/shunit2/compare/da1e19de845a77628d9684e609cc0f8160782c68...100ffe4dda539ebbe4ae9867132f08eeee8e80cb)
+  
+  updated-dependencies:
+  - dependency-name: tests/unit/shunit2
+    dependency-type: direct:production
+  ...
+- Bump tests/unit/shunit2 from `100ffe4` to `0f27c1a`
+ ([63f0cdf](https://github.com/mendersoftware/mender-configure-module/commit/63f0cdf0552ececd08a5605b33cfbbc0cbc45cba)) 
+
+
+
+
+  Bumps [tests/unit/shunit2](https://github.com/kward/shunit2) from `100ffe4` to `0f27c1a`.
+  - [Release notes](https://github.com/kward/shunit2/releases)
+  - [Commits](https://github.com/kward/shunit2/compare/100ffe4dda539ebbe4ae9867132f08eeee8e80cb...0f27c1ac71998835ff41d335d45079d6eb2a4bfe)
+  
+  updated-dependencies:
+  - dependency-name: tests/unit/shunit2
+    dependency-type: direct:production
+  ...
+- Bump tests/unit/shunit2 from `0f27c1a` to `6d31ca9`
+ ([97118cf](https://github.com/mendersoftware/mender-configure-module/commit/97118cf99fecac81e865bbcb0d22d7f024cda730)) 
+
+
+
+
+  Bumps [tests/unit/shunit2](https://github.com/kward/shunit2) from `0f27c1a` to `6d31ca9`.
+  - [Release notes](https://github.com/kward/shunit2/releases)
+  - [Commits](https://github.com/kward/shunit2/compare/0f27c1ac71998835ff41d335d45079d6eb2a4bfe...6d31ca9b0858cda66843057d08ea499b58c903d6)
+  
+  updated-dependencies:
+  - dependency-name: tests/unit/shunit2
+    dependency-version: 6d31ca9b0858cda66843057d08ea499b58c903d6
+    dependency-type: direct:production
+  ...
+- Bump tests/unit/shunit2 from `6d31ca9` to `e35296d`
+ ([67bda00](https://github.com/mendersoftware/mender-configure-module/commit/67bda0056d87dd4ef08c71dcf83cf15f2d57c53e)) 
+
+
+
+
+  Bumps [tests/unit/shunit2](https://github.com/kward/shunit2) from `6d31ca9` to `e35296d`.
+  - [Release notes](https://github.com/kward/shunit2/releases)
+  - [Commits](https://github.com/kward/shunit2/compare/6d31ca9b0858cda66843057d08ea499b58c903d6...e35296d3be2bcde770f2989d9c09fd1a2af6b567)
+  
+  updated-dependencies:
+  - dependency-name: tests/unit/shunit2
+    dependency-version: e35296d3be2bcde770f2989d9c09fd1a2af6b567
+    dependency-type: direct:production
+  ...
+
+## mender-binary-delta master (2026-03-11)
+
+### master - 2026-03-11
+
+
+#### Bug fixes
+
+
+- Convert the boot partition numbers to int before comparison.
+([MEN-8043](https://northerntech.atlassian.net/browse/MEN-8043)) ([99e8d24](https://github.com/mendersoftware/mender-binary-delta/commit/99e8d2487ab369194959f22a93b63c20141014e3)) 
+
+
+
+
+
+- Fix segfault when failing to get part number during install
+ ([951ed28](https://github.com/mendersoftware/mender-binary-delta/commit/951ed289a052dcc00b1f4ef4dfb4cc3538c3abb8)) 
+
+
+
+
+
+
+  This was a hidden bug that surfaced now while fixing the support for
+  PARTUUID and PARTLABEL. Or, in other words, when handling Mender
+  configuration with partitions that do not end with a number. In this
+  case pass_num is NULL and xasprintf will try to dereference it.
+- Correctly apply deltas with PARTUUID and PARTLABEL configuration
+([MEN-7160](https://northerntech.atlassian.net/browse/MEN-7160)) ([f146c78](https://github.com/mendersoftware/mender-binary-delta/commit/f146c786501db209bbfc80785bfe682ec658525d)) 
+
+
+
+
+
+
+
+  This fixes the bug where mender-binary-delta fails to apply the delta
+  when partitions are configured with PARTUUID or PARTLABEL options.
+  
+  Fixes the issue by first resolving the device symlinks like
+  /dev/disk/by-partuuid/*, /dev/disk/by-partlabel/*, and /dev/root to
+  their actual device paths (e.g., /dev/sda2, /dev/mmcblk0p2) and then
+  extracting the partition numbers.
+  
+  Related to https://github.com/mendersoftware/mender/pull/1613
+- Add missing license to the OS licenses manifest
+ ([f07a277](https://github.com/mendersoftware/mender-binary-delta/commit/f07a277c74210991f85f610c79b186e3eab5fe0b)) 
+
+
+
+
+
+
+
+
+
+#### Security
+
+
+- Bump tests/integration/mender_integration
+ ([70acccb](https://github.com/mendersoftware/mender-binary-delta/commit/70acccb6def4365950c0249e98ad3a1ad17bd5d0)) 
+
+
+
+
+  Bumps [tests/integration/mender_integration](https://github.com/mendersoftware/integration) from `36839fd` to `1501222`.
+  - [Commits](https://github.com/mendersoftware/integration/compare/36839fdcf687db9f587a9d1fc6bc56d356af5927...1501222d8c2594edea2c5e0f9c80facce36dfa05)
+  
+  updated-dependencies:
+  - dependency-name: tests/integration/mender_integration
+    dependency-type: direct:production
+  ...
+- Bump tests/integration/mender_test_containers
+ ([3cedd76](https://github.com/mendersoftware/mender-binary-delta/commit/3cedd762f9fec2498ff77dfbcad960b474343f5a)) 
+
+
+
+
+  Bumps [tests/integration/mender_test_containers](https://github.com/mendersoftware/mender-test-containers) from `4adf634` to `bc74861`.
+  - [Commits](https://github.com/mendersoftware/mender-test-containers/compare/4adf6344339c48ed581892e7cc1b2c6bb19bcf80...bc748616607384b75a37931592cff16b08aa1f93)
+  
+  updated-dependencies:
+  - dependency-name: tests/integration/mender_test_containers
+    dependency-type: direct:production
+  ...
+- Bump tests/unit/cmocka from `2206c22` to `f9e5b1f`
+ ([fa0c0eb](https://github.com/mendersoftware/mender-binary-delta/commit/fa0c0ebd02a74e6ab46c9c0b1e0e0846f35e6f73)) 
+
+
+
+
+  Bumps tests/unit/cmocka from `2206c22` to `f9e5b1f`.
+  
+  updated-dependencies:
+  - dependency-name: tests/unit/cmocka
+    dependency-type: direct:production
+  ...
+- Bump libntech from `8b72e12` to `58705c5`
+ ([e4a2ecf](https://github.com/mendersoftware/mender-binary-delta/commit/e4a2ecf9abdbbe590361a2e008d07665e47a6620)) 
+
+
+
+
+  Bumps [libntech](https://github.com/NorthernTechHQ/libntech) from `8b72e12` to `58705c5`.
+  - [Release notes](https://github.com/NorthernTechHQ/libntech/releases)
+  - [Commits](https://github.com/NorthernTechHQ/libntech/compare/8b72e12cb0b65e1cb424f805ded839b80ac53d93...58705c5515d4c6f8481eb8c0c70e1e3cf557f109)
+  
+  updated-dependencies:
+  - dependency-name: libntech
+    dependency-type: direct:production
+  ...
+- Bump tests/unit/cmocka from `f9e5b1f` to `2453c23`
+ ([501379b](https://github.com/mendersoftware/mender-binary-delta/commit/501379b24a885be5c4209ffefefd56db53897755)) 
+
+
+
+
+  Bumps tests/unit/cmocka from `f9e5b1f` to `2453c23`.
+  
+  updated-dependencies:
+  - dependency-name: tests/unit/cmocka
+    dependency-type: direct:production
+  ...
+- Bump libntech from `58705c5` to `329361a`
+ ([aa91c89](https://github.com/mendersoftware/mender-binary-delta/commit/aa91c894a5f21b080dd0a2b506cff651aa679c63)) 
+
+
+
+
+  Bumps [libntech](https://github.com/NorthernTechHQ/libntech) from `58705c5` to `329361a`.
+  - [Release notes](https://github.com/NorthernTechHQ/libntech/releases)
+  - [Commits](https://github.com/NorthernTechHQ/libntech/compare/58705c5515d4c6f8481eb8c0c70e1e3cf557f109...329361aa207512069f9df17981c78e5397f2f8b5)
+  
+  updated-dependencies:
+  - dependency-name: libntech
+    dependency-type: direct:production
+  ...
+- Bump libntech from `329361a` to `13a9e99`
+ ([d1d511f](https://github.com/mendersoftware/mender-binary-delta/commit/d1d511fb51568688bd6f6894332848652e957ca7)) 
+
+
+
+
+  Bumps [libntech](https://github.com/NorthernTechHQ/libntech) from `329361a` to `13a9e99`.
+  - [Release notes](https://github.com/NorthernTechHQ/libntech/releases)
+  - [Commits](https://github.com/NorthernTechHQ/libntech/compare/329361aa207512069f9df17981c78e5397f2f8b5...13a9e9935013948ebc9889e631fec0149ae87932)
+  
+  updated-dependencies:
+  - dependency-name: libntech
+    dependency-type: direct:production
+  ...
+- Bump tests/unit/cmocka from `2453c23` to `8f3854a`
+ ([99cdbbb](https://github.com/mendersoftware/mender-binary-delta/commit/99cdbbb815f66b294265eb9b6cbe5bc092769002)) 
+
+
+
+
+  Bumps [tests/unit/cmocka](https://gitlab.com/cmocka/cmocka) from `2453c23` to `8f3854a`.
+  - [Commits](https://gitlab.com/cmocka/cmocka/compare/2453c2347580290ddde85f9074b0f9b08f2f9c2f...8f3854ab86db0451e10be9e1d1e156e905f34f44)
+  
+  updated-dependencies:
+  - dependency-name: tests/unit/cmocka
+    dependency-type: direct:production
+  ...
+- Bump tests/unit/cmocka from `8f3854a` to `fa9b644`
+ ([ad2bc7d](https://github.com/mendersoftware/mender-binary-delta/commit/ad2bc7d2191e0fbbf56f7a85ad826caaa4ac0b91)) 
+
+
+
+
+  Bumps [tests/unit/cmocka](https://gitlab.com/cmocka/cmocka) from `8f3854a` to `fa9b644`.
+  - [Commits](https://gitlab.com/cmocka/cmocka/compare/8f3854ab86db0451e10be9e1d1e156e905f34f44...fa9b6449c54f4defbad7e27e35b0ce8d6547d8b4)
+  
+  updated-dependencies:
+  - dependency-name: tests/unit/cmocka
+    dependency-type: direct:production
+  ...
+- Bump libntech from `13a9e99` to `4e45713`
+ ([e913440](https://github.com/mendersoftware/mender-binary-delta/commit/e9134402b695256223057d7efe5f649cf1f48947)) 
+
+
+
+
+  Bumps [libntech](https://github.com/NorthernTechHQ/libntech) from `13a9e99` to `4e45713`.
+  - [Release notes](https://github.com/NorthernTechHQ/libntech/releases)
+  - [Commits](https://github.com/NorthernTechHQ/libntech/compare/13a9e9935013948ebc9889e631fec0149ae87932...4e45713d59f05d8f377dfe5f87d5cf84c688624b)
+  
+  updated-dependencies:
+  - dependency-name: libntech
+    dependency-type: direct:production
+  ...
+- Bump libntech from `4e45713` to `072bbcc`
+ ([ecd814e](https://github.com/mendersoftware/mender-binary-delta/commit/ecd814e10db47e80f5a7ab7d57326261a28c8fd0)) 
+
+
+
+
+  Bumps [libntech](https://github.com/NorthernTechHQ/libntech) from `4e45713` to `072bbcc`.
+  - [Release notes](https://github.com/NorthernTechHQ/libntech/releases)
+  - [Commits](https://github.com/NorthernTechHQ/libntech/compare/4e45713d59f05d8f377dfe5f87d5cf84c688624b...072bbcc8d180510300972915c1d95eb3eccd3728)
+  
+  updated-dependencies:
+  - dependency-name: libntech
+    dependency-type: direct:production
+  ...
+- Bump libntech from `072bbcc` to `69e2624`
+ ([53a23e0](https://github.com/mendersoftware/mender-binary-delta/commit/53a23e0228991b091a5c8eb8eb8c473b58f3a1a2)) 
+
+
+
+
+  Bumps [libntech](https://github.com/NorthernTechHQ/libntech) from `072bbcc` to `69e2624`.
+  - [Release notes](https://github.com/NorthernTechHQ/libntech/releases)
+  - [Commits](https://github.com/NorthernTechHQ/libntech/compare/072bbcc8d180510300972915c1d95eb3eccd3728...69e262461e19759141527d605be52da61fccc505)
+  
+  updated-dependencies:
+  - dependency-name: libntech
+    dependency-type: direct:production
+  ...
+- Bump submodules
+ ([61cff5d](https://github.com/mendersoftware/mender-binary-delta/commit/61cff5d390cc138946a9d785252a3ce84ca3edd3)) 
+
+
+
+
+  Bump libntech:
+  * 69e262461e19759141527d605be52da61fccc505 -> 5a62ba4fd32a9ecffb6f9d698e4f4981986c6cec
+  
+  Bump tests/integration/mender_test_containers:
+  * fec8b87c72967bb526d59d98e01420de60d71176 -> 99219966a0a924d33fee379a61e542c2cda623cb
+  
+  Bump tests/integration/mender_integration:
+  * 305cbf5b63785ec629b4e4ad657364516b479f74 -> 1ded978181876f2a5d027d28f2a7ec5a2f356091
+  
+  Bump tests/unit/cmocka:
+  * fa9b6449c54f4defbad7e27e35b0ce8d6547d8b4 -> 66d319e98d1e2a6f5f0468397991d255b641cf2f
+
+
+
+
+#### Build
+
+
+- Update cloning link for cmocka, whose original has broken.
+ ([535f8a4](https://github.com/mendersoftware/mender-binary-delta/commit/535f8a4a81872c51874df2a1471d16891f28ad6b))
+
+## mender-container-modules main (2026-01-13)
+
+No changelog entries found.
 
 ---
 
