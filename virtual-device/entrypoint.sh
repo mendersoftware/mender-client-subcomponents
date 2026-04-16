@@ -37,10 +37,11 @@ sleep 8
 supervise() {
     name=$1
     shift
-    while true; do
+    while [ ! -f /stop-respawn ]; do
         "$@" || echo "[entrypoint] $name exited $?, restarting in 2s" >&2
         sleep 2
     done
+    echo "[entrypoint] $name: /stop-respawn detected, not restarting" >&2
 }
 
 supervise mender-auth    mender-auth    daemon &
