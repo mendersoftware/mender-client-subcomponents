@@ -29,9 +29,24 @@ fi
 cp /usr/share/dbus-1/system.d/io.mender.AuthenticationManager.conf /etc/dbus-1/system-local.conf
 dbus-daemon --nofork --nopidfile --system &
 sleep 8
-mender-auth daemon &
+
+# Supervise each mender daemon so they respawn on exit. Without this, any
+# transient condition that causes mender-auth to exit (e.g. exhausting its
+# auth-retry budget during a network partition) leaves the virtual device
+# permanently unable to talk to the server.
+supervise() {
+    name=$1
+    shift
+    while [ ! -f /stop-respawn ]; do
+        "$@" || echo "[entrypoint] $name exited $?, restarting in 2s" >&2
+        sleep 2
+    done
+    echo "[entrypoint] $name: /stop-respawn detected, not restarting" >&2
+}
+
+supervise mender-auth    mender-auth    daemon &
 sleep 1
-mender-update daemon &
+supervise mender-update  mender-update  daemon &
 sleep 8
-mender-connect daemon &
-while true; do sleep 10; done
+supervise mender-connect mender-connect daemon &
+wait

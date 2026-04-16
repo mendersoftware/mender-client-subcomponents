@@ -109,4 +109,14 @@ RUN \
 RUN update-ca-certificates
 
 COPY entrypoint.sh /
+
+# Container becomes "healthy" once mender-auth responds over D-Bus.
+# start-period covers dbus-daemon init + mender-auth first auth cycle.
+HEALTHCHECK --interval=10s --timeout=5s --start-period=120s --retries=3 \
+    CMD dbus-send --system --print-reply \
+        --dest=io.mender.AuthenticationManager \
+        /io/mender/AuthenticationManager \
+        io.mender.Authentication1.GetJwtToken \
+        > /dev/null 2>&1
+
 CMD [ "/entrypoint.sh" ]
