@@ -61,7 +61,7 @@ RUN curl --fail --silent --show-error --location \
     apt-get update && apt-get install -y mender-artifact
 RUN mender-artifact write bootstrap-artifact \
         --artifact-name original \
-        --device-type generic-x86_64 \
+        --compatible-types generic-x86_64 \
         --provides "rootfs-image.version:original" \
         --output-path /bootstrap.mender
 
