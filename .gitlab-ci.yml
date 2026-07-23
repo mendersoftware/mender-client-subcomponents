@@ -227,7 +227,7 @@ release:mender-docs:
     - git push origin autoversion-${CI_JOB_ID}
     - gh pr create
       --title "Mender Client ${CI_COMMIT_TAG} release updates"
-      --body "Automated change for Mender Client ${CI_COMMIT_TAG} release
+      --body "Automated change for Mender Client ${CI_COMMIT_TAG} release"
       --base master
       --head autoversion-${CI_JOB_ID}
 
