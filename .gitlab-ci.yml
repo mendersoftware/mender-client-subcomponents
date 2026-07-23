@@ -12,20 +12,6 @@ include:
   - project: 'Northern.tech/Mender/mendertesting'
     file: '.gitlab-ci-check-docker-build.yml'
 
-  # Release CI/CD components
-  - component: gitlab.com/Northern.tech/Mender/mendertesting/release-docs-changelog@master
-    inputs:
-      remote_changelog_file: "20.Mender-Client/docs.md"
-      when: manual
-      rules:
-        # NOTE: It is still TBD how to keep a single source of truth for the CHANGELOG.md in the main branch
-        # In order to not automate "too early" let's keep the jobs manual and instruct in the release process
-        # that a human needs to merge and resolve conflicts when required.
-        # Run on maintenance branches (1.0.x or v1.0.x format)
-        - if: '$CI_COMMIT_BRANCH =~ "/^v?\d+\.\d+\.x$/"'
-        # Or on default branch
-        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
 default:
   tags:
     - k8s-small
@@ -118,6 +104,58 @@ test:validate:schema:
         version_field=$(node --print "require('./$file').version")
         test "$filename" = "$version_field"
       done
+
+# Opens a PR on mender-docs-changelog prepending each subcomponent's new
+# changelog section to its page under Mender Client. Runs on final release
+# tags, whose commit carries the exact-version JSON.
+release:mender-docs-changelog:
+  stage: publish
+  needs: []
+  image:
+    name: "registry.gitlab.com/northern.tech/mender/mender-test-containers/release-please:master"
+    entrypoint: [""]
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/ && $CI_COMMIT_REF_PROTECTED == "true"'
+      when: manual
+      allow_failure: true
+  before_script:
+    - |
+      if [ -z "$GITHUB_BOT_TOKEN_REPO_FULL" ] || [ -z "$GITHUB_CLI_TOKEN" ]; then
+        echo "ERROR: GITHUB_BOT_TOKEN_REPO_FULL and GITHUB_CLI_TOKEN must be set"
+        exit 1
+      fi
+    - git config --global user.name "mender-test-bot"
+    - git config --global user.email "mender@northern.tech"
+    - export GITHUB_TOKEN=${GITHUB_CLI_TOKEN}
+    # Check out repos
+    - |
+      jq -r '.components[] | "\(.source):\(.version)"' "subcomponents/releases/${CI_COMMIT_TAG}.json" |
+      while IFS=: read -r source version; do
+          repo_path="/tmp/repos/$(basename $source)"
+          [ -d "$repo_path" ] && continue
+          git clone "https://mender-test-bot:${GITHUB_BOT_TOKEN_REPO_FULL}@${source}" "$repo_path"
+          git -C "$repo_path" checkout "$version"
+      done
+  script:
+    - ./release-scripts/changelog-aggregator --version-next ${CI_COMMIT_TAG} --repos-dir /tmp/repos/ --output-dir /tmp/changelog-sections
+    - git clone https://mender-test-bot:${GITHUB_BOT_TOKEN_REPO_FULL}@github.com/mendersoftware/mender-docs-changelog /tmp/mender-docs-changelog
+    - cd /tmp/mender-docs-changelog
+    - git checkout -b changelog-${CI_JOB_ID}
+    - ${CI_PROJECT_DIR}/release-scripts/changelog-docs-updater --sections-dir /tmp/changelog-sections --docs-repo .
+    - git add 20.Mender-Client
+    # No sections, or all of them already on their pages (rerun) -> clean no-op
+    - |
+      if git diff --cached --quiet; then
+        echo "No new changelog sections, nothing to do"
+        exit 0
+      fi
+    - 'git commit -s -m "chore: add ${CI_PROJECT_NAME} changelogs"'
+    - git push origin changelog-${CI_JOB_ID}
+    - gh pr create
+      --title "Update changelogs for Mender Client ${CI_COMMIT_TAG}"
+      --body "Automated change from ${CI_PROJECT_NAME}"
+      --base master
+      --head changelog-${CI_JOB_ID}
 
 release:licenses:generate:
   stage: publish

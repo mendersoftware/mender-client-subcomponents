@@ -270,9 +270,12 @@ def clean_changelog_output(changelog, version, date):
     return "\n".join(cleaned).strip()
 
 
-def find_latest_release():
+def find_latest_release(exclude=None):
     """
     Find the latest release version based on semantic versioning.
+
+    Args:
+        exclude: Version to skip, so a release target can find its predecessor
 
     Returns:
         str: Latest release version
@@ -291,6 +294,8 @@ def find_latest_release():
     for filename in os.listdir(releases_dir):
         if filename.endswith(".json") and filename != "next.json":
             version = filename[:-5]  # Remove .json
+            if version == exclude:
+                continue
             try:
                 version_parts = tuple(map(int, version.split(".")))
                 releases.append((version_parts, version))
@@ -329,6 +334,11 @@ parser.add_argument(
 parser.add_argument(
     "--output", help="Output file path (default: stdout)",
 )
+parser.add_argument(
+    "--output-dir",
+    help="Write one changelog section file per subcomponent into this "
+    "directory, ready to prepend to the subcomponent's docs changelog page",
+)
 args = parser.parse_args()
 
 # Determine version range
@@ -340,7 +350,7 @@ else:  # args.version_next
     if target == "main":
         target = "next"
     to_version = target
-    from_version = find_latest_release()
+    from_version = find_latest_release(exclude=to_version)
     print(f"Determined version range: {from_version}..{to_version}\n", file=sys.stderr)
 
 # Load release JSONs
@@ -378,9 +388,9 @@ for repo_info in repos_list:
 
     # Handle special cases
     if repo_info.version == "1.0.0":
-        output_parts.append(f"\nFirst release of {repo_info.repo_name}")
+        body = f"First release of {repo_info.repo_name}"
     elif from_repo_version == repo_info.version:
-        output_parts.append("\nNo changes")
+        body = "No changes"
     else:
         if from_repo_version is None:
             print(
@@ -388,7 +398,7 @@ for repo_info in repos_list:
                 f"treating as new component",
                 file=sys.stderr,
             )
-            output_parts.append(f"\nFirst release of {repo_info.repo_name}")
+            body = f"First release of {repo_info.repo_name}"
         else:
             # Generate changelog
             print(
@@ -401,18 +411,30 @@ for repo_info in repos_list:
             cleaned_changelog = clean_changelog_output(
                 changelog, repo_info.version, tag_date
             )
+            body = cleaned_changelog or "No changelog entries found."
 
-            if cleaned_changelog:
-                output_parts.append("\n" + cleaned_changelog)
-            else:
-                output_parts.append("\nNo changelog entries found.")
+    output_parts.append("\n" + body)
 
-# Write output
-output_text = "\n".join(output_parts) + "\n"
+    # Write this subcomponent's section to its own file. Unchanged
+    # subcomponents are skipped. The trailing blank line keeps the markdown
+    # valid when the file is inserted above an existing section.
+    if args.output_dir and body != "No changes":
+        os.makedirs(args.output_dir, exist_ok=True)
+        section_path = os.path.join(args.output_dir, f"{repo_info.repo_name}.md")
+        with open(section_path, "w") as f:
+            f.write(
+                f"## {repo_info.repo_name} {repo_info.version} ({tag_date})\n"
+                f"\n{body}\n\n"
+            )
+        print(f"  Section written to: {section_path}", file=sys.stderr)
 
-if args.output:
-    with open(args.output, "w") as f:
-        f.write(output_text)
-    print(f"Changelog written to: {args.output}", file=sys.stderr)
-else:
-    print(output_text)
+# Write combined output, unless already written as per-subcomponent sections
+if not args.output_dir:
+    output_text = "\n".join(output_parts) + "\n"
+
+    if args.output:
+        with open(args.output, "w") as f:
+            f.write(output_text)
+        print(f"Changelog written to: {args.output}", file=sys.stderr)
+    else:
+        print(output_text)

@@ -1,0 +1,88 @@
+#!/usr/bin/python3
+
+import argparse
+import sys
+from pathlib import Path
+
+# Docs page for each subcomponent, relative to the mender-docs-changelog repo.
+# A section file with no entry here is an error: add the page mapping when a
+# new subcomponent starts releasing.
+DOCS_PAGES = {
+    "mender": "20.Mender-Client/01.mender-update-mender-auth/docs.md",
+    "mender-connect": "20.Mender-Client/02.mender-connect/docs.md",
+    "monitor-client": "20.Mender-Client/03.monitor-client/docs.md",
+    "mender-flash": "20.Mender-Client/04.mender-flash/docs.md",
+    "mender-configure-module": "20.Mender-Client/05.mender-configure-module/docs.md",
+    "mender-binary-delta": "20.Mender-Client/06.mender-binary-delta/docs.md",
+    "mender-container-modules": "20.Mender-Client/07.mender-container-modules/docs.md",
+}
+
+
+def insert_after_front_matter(page_text, section_text):
+    """
+    Insert section_text right after the page's front matter (the second
+    '---' line), so the newest release ends up on top.
+    """
+    lines = page_text.splitlines(keepends=True)
+    dashes = 0
+    for i, line in enumerate(lines):
+        if line.rstrip("\n") == "---":
+            dashes += 1
+            if dashes == 2:
+                return "".join(lines[: i + 1]) + "\n" + section_text + "".join(lines[i + 1 :])
+
+    sys.exit("ERROR: page has no front matter")
+
+
+def update_page(section_path, docs_repo):
+    """
+    Prepend the section to its subcomponent's docs page. Skips if the
+    section is already on the page (job rerun), so partial runs are safe
+    to retry.
+    """
+    name = section_path.stem
+    docs_page = DOCS_PAGES.get(name)
+    if docs_page is None:
+        sys.exit(f"ERROR: no docs page for subcomponent {name}")
+    page_path = Path(docs_repo, docs_page)
+
+    section_text = section_path.read_text()
+    page_text = page_path.read_text()
+
+    # First line of the section is its '## <repo> <version> (<date>)'
+    # heading, unique per release
+    heading = section_text.splitlines()[0]
+    if heading in page_text.splitlines():
+        print(f"{name}: section already on page, skipping", file=sys.stderr)
+        return
+
+    page_path.write_text(insert_after_front_matter(page_text, section_text))
+    print(f"{name}: updated {docs_page}", file=sys.stderr)
+
+
+parser = argparse.ArgumentParser(
+    description="Update the docs changelog pages with the per-subcomponent "
+    "section files emitted by changelog-aggregator --output-dir. Only edits "
+    "files; committing the result is left to the caller."
+)
+parser.add_argument(
+    "--sections-dir",
+    required=True,
+    help="Directory with the <subcomponent>.md section files",
+)
+parser.add_argument(
+    "--docs-repo",
+    required=True,
+    help="Path to a mender-docs-changelog checkout",
+)
+args = parser.parse_args()
+
+# The aggregator only creates the directory when a subcomponent has changes;
+# globbing a missing directory just yields nothing.
+sections = sorted(Path(args.sections_dir).glob("*.md"))
+if not sections:
+    print("No changelog sections, nothing to do", file=sys.stderr)
+    sys.exit(0)
+
+for section_path in sections:
+    update_page(section_path, args.docs_repo)
