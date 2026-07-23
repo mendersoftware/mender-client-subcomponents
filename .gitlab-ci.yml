@@ -347,13 +347,5 @@ release:candidate:update-changelog:
     - RELEASE_CANDIDATE_PR=$(gh pr list --author "mender-test-bot" --head "release-candidate-${CI_COMMIT_REF_NAME}" --json number | jq -r '.[0].number // empty')
     # Generate changelog aggregation
     - ./release-scripts/changelog-aggregator --version-next ${RELEASE_TARGET} --repos-dir /tmp/repos/ --output CHANGELOG-next.md
-    # Override release-please changelog
-    - cp CHANGELOG.md CHANGELOG.md.${CI_COMMIT_SHA}
-    - gh pr checkout --force $RELEASE_CANDIDATE_PR
-    - cat CHANGELOG-next.md CHANGELOG.md.${CI_COMMIT_SHA}> CHANGELOG.md
-    # Update the PR content
-    - git add CHANGELOG.md
-    - git commit --amend -s --no-edit
-    - git push github-${CI_JOB_ID} --force
       # Update the PR body
     - gh pr edit $RELEASE_CANDIDATE_PR --body-file CHANGELOG-next.md
