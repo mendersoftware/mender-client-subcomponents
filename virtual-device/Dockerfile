@@ -20,7 +20,7 @@ WORKDIR /src/mender
 RUN mkdir --parents /mender-install/etc/mender
 RUN cmake -D CMAKE_INSTALL_PREFIX:PATH=/usr -S .
 RUN DESTDIR=/mender-install make --jobs=$(nproc --all) install
-RUN jq ".ServerCertificate=\"/usr/share/doc/mender-auth/examples/demo.crt\" | .ServerURL=\"https://docker.mender.io/\"" \
+RUN jq ".ServerCertificate=\"/usr/share/mender-auth/examples/demo.crt\" | .ServerURL=\"https://docker.mender.io/\"" \
     < examples/mender.conf.demo > /mender-install/etc/mender/mender.conf
 RUN mkdir --parents /mender-install/var/lib/mender && echo device_type=generic-x86_64 > /mender-install/var/lib/mender/device_type
 
