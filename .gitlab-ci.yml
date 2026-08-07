@@ -152,7 +152,7 @@ release:licenses:publish:
     # Only publish on final tags
     - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/ && $CI_COMMIT_REF_PROTECTED == "true"'
       allow_failure: true
-  image: "registry.gitlab.com/northern.tech/mender/mender-test-containers:release-please-v1-master"
+  image: "registry.gitlab.com/northern.tech/mender/mender-test-containers/release-please:master"
   needs:
     - job: release:licenses:generate
       artifacts: true
@@ -197,7 +197,7 @@ release:mender-docs:
   stage: publish
   needs: []
   image:
-    name: "registry.gitlab.com/northern.tech/mender/mender-test-containers:release-please-v1-master"
+    name: "registry.gitlab.com/northern.tech/mender/mender-test-containers/release-please:master"
     entrypoint: [""]
   rules:
     # Only on production tags (with or without 'v' prefix)
@@ -235,7 +235,7 @@ release:candidate:update-changelog:
   stage: publish
   needs: []
   image:
-    name: "registry.gitlab.com/northern.tech/mender/mender-test-containers:release-please-v1-master"
+    name: "registry.gitlab.com/northern.tech/mender/mender-test-containers/release-please:master"
     entrypoint: [""]
   rules:
     # Run on maintenance branches (1.0.x or v1.0.x format)
