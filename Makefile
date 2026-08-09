@@ -1,5 +1,6 @@
 SHELL := /bin/bash
 
+
 ALL_RELEASES := $(sort $(patsubst subcomponents/releases/%.json,%,$(wildcard subcomponents/releases/*.json)))
 # By default define RELEASE from Git tag
 GIT_VERSION = $(shell git describe --tags --exact-match 2>/dev/null)
