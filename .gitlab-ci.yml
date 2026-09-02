@@ -196,7 +196,7 @@ release:licenses:publish:
       artifacts: true
   variables:
     GITHUB_DOCS_REPO_NAME: "mender-docs"
-    REMOTE_LICENSE_FILE: "302.Release-information/03.Open-source-licenses/03.Mender-Client/docs.md"
+    REMOTE_LICENSE_FILE: "302.Release-information/04.Open-source-licenses/03.Mender-Client/docs.md"
   before_script:
     # Check required environment variables
     - |
