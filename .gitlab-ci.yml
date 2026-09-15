@@ -65,7 +65,7 @@ test:build:inventory-script:releases:
         version=$(basename "$file" .json)
         RELEASE=$version make build
         cat inventory-script/mender-inventory-client-version
-        test "echo mender_client_version=$version" = "$(cat inventory-script/mender-inventory-client-version)"
+        grep -qx "echo mender_client_version=$version" inventory-script/mender-inventory-client-version
       done
 
 test:build:inventory-script:default:
@@ -85,7 +85,7 @@ test:build:inventory-script:unsupported:
   script:
     - make build
     - cat inventory-script/mender-inventory-client-version
-    - test "echo mender_client_version=unsupported" = "$(cat inventory-script/mender-inventory-client-version)"
+    - grep -qx "echo mender_client_version=unsupported" inventory-script/mender-inventory-client-version
 
 test:validate:schema:
   stage: test
