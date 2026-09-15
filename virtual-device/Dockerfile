@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y make git build-essential jq cmake \
 
 # TODO MEN-9015: figure out how to get these from the json
 ARG MENDER_CLIENT_REV=master
-RUN git clone https://github.com/mendersoftware/mender /src/mender
+RUN git clone --branch $MENDER_CLIENT_REV --single-branch https://github.com/mendersoftware/mender /src/mender
 WORKDIR /src/mender
 RUN git fetch origin $MENDER_CLIENT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CLIENT_REV
 RUN git submodule update --init
@@ -35,7 +35,7 @@ ARG MENDER_CONFIGURE_REV=master
 
 # mender-connect ---------------------------------------------------------------
 
-RUN git clone https://github.com/mendersoftware/mender-connect /src/mender-connect
+RUN git clone --branch $MENDER_CONNECT_REV --single-branch https://github.com/mendersoftware/mender-connect /src/mender-connect
 WORKDIR /src/mender-connect
 RUN git fetch origin $MENDER_CONNECT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONNECT_REV
 
@@ -46,7 +46,7 @@ RUN jq ".User=\"root\"" \
 
 # mender-configure -------------------------------------------------------------
 
-RUN git clone https://github.com/mendersoftware/mender-configure-module /src/mender-configure-module
+RUN git clone --branch $MENDER_CONFIGURE_REV --single-branch https://github.com/mendersoftware/mender-configure-module /src/mender-configure-module
 WORKDIR /src/mender-configure-module
 RUN git fetch origin $MENDER_CONFIGURE_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONFIGURE_REV
 
