@@ -113,6 +113,10 @@ conventional_commits = true
 filter_unconventional = true
 # process each line of a commit as an individual commit
 split_commits = false
+# drop "git cherry-pick -x" lines, otherwise they are parsed as part of the preceding footer value
+commit_preprocessors = [
+    { pattern = '\n*\(cherry picked from commit [0-9a-f]+\)', replace = "" },
+]
 # regex for parsing and grouping commits
 commit_parsers = [
     # NOTE: git-cliff evaluates parsers first-match-wins and combines a single parser's
