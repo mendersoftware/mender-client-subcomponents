@@ -218,7 +218,6 @@ release:licenses:publish:
     - git clone https://mender-test-bot:${GITHUB_BOT_TOKEN_REPO_FULL}@github.com/mendersoftware/${GITHUB_DOCS_REPO_NAME}
     - cd ${GITHUB_DOCS_REPO_NAME}
     - git checkout -b licenses-${CI_JOB_ID}
-    - REMOTE_LICENSE_FILE="302.Release-information/03.Open-source-licenses/03.Mender-Client/docs.md"
     - cat ../.licenses_header.md > $REMOTE_LICENSE_FILE
     - cat ../licenses.md >> $REMOTE_LICENSE_FILE
     - git add $REMOTE_LICENSE_FILE
