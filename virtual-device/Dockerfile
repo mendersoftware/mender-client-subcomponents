@@ -1,12 +1,24 @@
 # Creates a container which acts as a bare bones non-VM based Mender Client
 # installation, for use in tests and as Virtual Device for evaluation
 
+ARG XX_VERSION=1.9.0
+
+# The build stages run on the build platform and cross-compile for the target
+# platform. Compiling under QEMU emulation is slow, and the Go build can hang.
+# The xx-* helpers install target packages and set up the cross-compilers, see
+# https://github.com/tonistiigi/xx
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
+FROM --platform=$BUILDPLATFORM ubuntu:24.04 AS build-base
+COPY --from=xx / /
+ARG TARGETPLATFORM
+
 # Build mender repository, which is heaviest part
-FROM ubuntu:24.04 AS build-mender
+FROM build-base AS build-mender
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y make git build-essential jq cmake \
-    libssl-dev liblmdb++-dev libboost-dev libboost-log-dev \
+RUN apt-get update && apt-get install -y make git jq cmake pkgconf
+RUN xx-apt-get install -y gcc g++ libssl-dev liblmdb++-dev libboost-dev libboost-log-dev \
     libarchive-dev libdbus-1-dev
 
 # TODO MEN-9015: figure out how to get these from the json
@@ -18,17 +30,24 @@ RUN git submodule update --init
 
 WORKDIR /src/mender
 RUN mkdir --parents /mender-install/etc/mender
-RUN cmake -D CMAKE_INSTALL_PREFIX:PATH=/usr -S .
+RUN TRIPLE=$(xx-info triple) && \
+    PKG_CONFIG=$TRIPLE-pkg-config cmake -D CMAKE_INSTALL_PREFIX:PATH=/usr \
+        -D CMAKE_SYSTEM_NAME=Linux -D CMAKE_SYSTEM_PROCESSOR=$(xx-info march) \
+        -D CMAKE_C_COMPILER=$TRIPLE-gcc -D CMAKE_CXX_COMPILER=$TRIPLE-g++ -S .
 RUN DESTDIR=/mender-install make --jobs=$(nproc --all) install
 RUN jq ".ServerCertificate=\"/usr/share/mender-auth/examples/demo.crt\" | .ServerURL=\"https://docker.mender.io/\"" \
     < examples/mender.conf.demo > /mender-install/etc/mender/mender.conf
 RUN mkdir --parents /mender-install/var/lib/mender && echo device_type=generic-x86_64 > /mender-install/var/lib/mender/device_type
 
 # Build mender-connect and mender-configure, and generate the bootstrap Artifact
-FROM ubuntu:24.04 AS build-other
+FROM build-base AS build-other
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y make git golang liblzma-dev libglib2.0-dev curl jq
+# qemu-user is never run. It only satisfies libglib2.0-dev's "python3 | qemu-user"
+# dependency, which would otherwise install python3 for the target and run it.
+RUN apt-get update && apt-get install -y --no-install-recommends make git golang pkgconf qemu-user \
+    ca-certificates curl jq
+RUN xx-apt-get install -y --no-install-recommends gcc libc6-dev liblzma-dev libglib2.0-dev
 
 ARG MENDER_CONNECT_REV=master
 ARG MENDER_CONFIGURE_REV=master
@@ -40,7 +59,7 @@ WORKDIR /src/mender-connect
 RUN git fetch origin $MENDER_CONNECT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONNECT_REV
 
 RUN mkdir --parents /mender-install/etc/mender
-RUN make prefix=/mender-install install
+RUN xx-go --wrap && CGO_ENABLED=1 make prefix=/mender-install install
 RUN jq ".User=\"root\"" \
     < examples/mender-connect.conf > /mender-install/etc/mender/mender-connect.conf
 
