@@ -51,7 +51,7 @@ COPY --from=sources /mender /src/mender
 WORKDIR /src/mender
 RUN mkdir --parents /mender-install/etc/mender
 RUN TRIPLE=$(xx-info triple) && \
-    PKG_CONFIG=$TRIPLE-pkg-config cmake -D CMAKE_INSTALL_PREFIX:PATH=/usr \
+    PKG_CONFIG=$TRIPLE-pkg-config cmake -D CMAKE_INSTALL_PREFIX:PATH=/usr -D BUILD_TESTS=OFF \
         -D CMAKE_SYSTEM_NAME=Linux -D CMAKE_SYSTEM_PROCESSOR=$(xx-info march) \
         -D CMAKE_C_COMPILER=$TRIPLE-gcc -D CMAKE_CXX_COMPILER=$TRIPLE-g++ -S .
 RUN DESTDIR=/mender-install make --jobs=$(nproc --all) install
