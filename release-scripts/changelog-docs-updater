@@ -49,8 +49,8 @@ def update_page(section_path, docs_repo):
     section_text = section_path.read_text()
     page_text = page_path.read_text()
 
-    # First line of the section is its '## <repo> <version> (<date>)'
-    # heading, unique per release
+    # First line of the section is its '## <version> - <date>' heading,
+    # unique per release on the subcomponent's page
     heading = section_text.splitlines()[0]
     if heading in page_text.splitlines():
         print(f"{name}: section already on page, skipping", file=sys.stderr)

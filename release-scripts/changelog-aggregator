@@ -233,7 +233,7 @@ def generate_changelog(repo_path, from_version, to_version):
         sys.exit(1)
 
 
-def clean_changelog_output(changelog, version, date):
+def clean_changelog_output(changelog, version, date, demote=True):
     """
     Clean git-cliff output by removing header/footer markers and adjusting heading levels.
 
@@ -246,12 +246,14 @@ def clean_changelog_output(changelog, version, date):
         changelog: Raw git-cliff output
         version: Component version (e.g., "1.5.2")
         date: Release date (e.g., "2025-10-11")
+        demote: Shift headers one level down, to nest them under a repo header
 
     Returns:
         str: Cleaned changelog content
     """
     lines = changelog.split("\n")
     cleaned = []
+    prefix = "#" if demote else ""
 
     for line in lines:
         # Skip --- markers (header/footer)
@@ -259,11 +261,11 @@ def clean_changelog_output(changelog, version, date):
             continue
         # Replace [unreleased] headers with actual version
         if line.strip() == "## [unreleased]":
-            cleaned.append(f"### {version} - {date}")
+            cleaned.append(f"{prefix}## {version} - {date}")
             continue
         # Convert version headers for intermediate versions
         if line.startswith("## ") or line.startswith("### "):
-            cleaned.append("#" + line)
+            cleaned.append(prefix + line)
             continue
         cleaned.append(line)
 
@@ -387,6 +389,7 @@ for repo_info in repos_list:
     output_parts.append(f"\n## {repo_info.repo_name} {repo_info.version} ({tag_date})")
 
     # Handle special cases
+    changelog = ""
     if repo_info.version == "1.0.0":
         body = f"First release of {repo_info.repo_name}"
     elif from_repo_version == repo_info.version:
@@ -417,15 +420,19 @@ for repo_info in repos_list:
 
     # Write this subcomponent's section to its own file. Unchanged
     # subcomponents are skipped. The trailing blank line keeps the markdown
-    # valid when the file is inserted above an existing section.
+    # valid when the file is inserted above an existing section. Each page
+    # holds one subcomponent, so the section is git-cliff's output as is,
+    # with a "## <version> - <date>" header per release.
     if args.output_dir and body != "No changes":
+        section = clean_changelog_output(
+            changelog, repo_info.version, tag_date, demote=False
+        )
+        if not section:
+            section = f"## {repo_info.version} - {tag_date}\n\n{body}"
         os.makedirs(args.output_dir, exist_ok=True)
         section_path = os.path.join(args.output_dir, f"{repo_info.repo_name}.md")
         with open(section_path, "w") as f:
-            f.write(
-                f"## {repo_info.repo_name} {repo_info.version} ({tag_date})\n"
-                f"\n{body}\n\n"
-            )
+            f.write(f"{section}\n\n")
         print(f"  Section written to: {section_path}", file=sys.stderr)
 
 # Write combined output, unless already written as per-subcomponent sections
