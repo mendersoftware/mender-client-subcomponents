@@ -3,6 +3,32 @@
 
 ARG XX_VERSION=1.9.0
 
+# Sources of the components. To skip the cloning, pass --build-context
+# sources=<dir> where <dir> contains the mender, mender-connect and
+# mender-configure-module checkouts. Don't pass the checkouts themselves:
+# mender's own .dockerignore would then apply and make its version -dirty.
+FROM --platform=$BUILDPLATFORM alpine:3.24 AS clone
+RUN apk add --no-cache git
+
+ARG MENDER_CLIENT_REV=master
+RUN git clone https://github.com/mendersoftware/mender /src/mender
+WORKDIR /src/mender
+RUN git fetch origin $MENDER_CLIENT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CLIENT_REV
+RUN git submodule update --init
+
+ARG MENDER_CONNECT_REV=master
+RUN git clone https://github.com/mendersoftware/mender-connect /src/mender-connect
+WORKDIR /src/mender-connect
+RUN git fetch origin $MENDER_CONNECT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONNECT_REV
+
+ARG MENDER_CONFIGURE_REV=master
+RUN git clone https://github.com/mendersoftware/mender-configure-module /src/mender-configure-module
+WORKDIR /src/mender-configure-module
+RUN git fetch origin $MENDER_CONFIGURE_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONFIGURE_REV
+
+FROM scratch AS sources
+COPY --from=clone /src /
+
 # The build stages run on the build platform and cross-compile for the target
 # platform. Compiling under QEMU emulation is slow, and the Go build can hang.
 # The xx-* helpers install target packages and set up the cross-compilers, see
@@ -21,12 +47,7 @@ RUN apt-get update && apt-get install -y make git jq cmake pkgconf
 RUN xx-apt-get install -y gcc g++ libssl-dev liblmdb++-dev libboost-dev libboost-log-dev \
     libarchive-dev libdbus-1-dev
 
-ARG MENDER_CLIENT_REV=master
-RUN git clone https://github.com/mendersoftware/mender /src/mender
-WORKDIR /src/mender
-RUN git fetch origin $MENDER_CLIENT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CLIENT_REV
-RUN git submodule update --init
-
+COPY --from=sources /mender /src/mender
 WORKDIR /src/mender
 RUN mkdir --parents /mender-install/etc/mender
 RUN TRIPLE=$(xx-info triple) && \
@@ -48,14 +69,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends make git golang
     ca-certificates curl jq
 RUN xx-apt-get install -y --no-install-recommends gcc libc6-dev liblzma-dev libglib2.0-dev
 
-ARG MENDER_CONNECT_REV=master
-ARG MENDER_CONFIGURE_REV=master
-
 # mender-connect ---------------------------------------------------------------
 
-RUN git clone https://github.com/mendersoftware/mender-connect /src/mender-connect
+COPY --from=sources /mender-connect /src/mender-connect
 WORKDIR /src/mender-connect
-RUN git fetch origin $MENDER_CONNECT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONNECT_REV
 
 RUN mkdir --parents /mender-install/etc/mender
 RUN xx-go --wrap && CGO_ENABLED=1 make prefix=/mender-install install
@@ -64,9 +81,8 @@ RUN jq ".User=\"root\"" \
 
 # mender-configure -------------------------------------------------------------
 
-RUN git clone https://github.com/mendersoftware/mender-configure-module /src/mender-configure-module
+COPY --from=sources /mender-configure-module /src/mender-configure-module
 WORKDIR /src/mender-configure-module
-RUN git fetch origin $MENDER_CONFIGURE_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONFIGURE_REV
 
 RUN make DESTDIR=/mender-install install
 
