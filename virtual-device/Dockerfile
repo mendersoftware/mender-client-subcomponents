@@ -11,20 +11,23 @@ FROM --platform=$BUILDPLATFORM alpine:3.24 AS clone
 RUN apk add --no-cache git
 
 ARG MENDER_CLIENT_REV=master
-RUN git clone https://github.com/mendersoftware/mender /src/mender
 WORKDIR /src/mender
-RUN git fetch origin $MENDER_CLIENT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CLIENT_REV
-RUN git submodule update --init
+RUN git init -q && git remote add origin https://github.com/mendersoftware/mender
+RUN git fetch --depth 1 origin $MENDER_CLIENT_REV:refs/rev && git checkout -q FETCH_HEAD || \
+    (git fetch origin && git checkout -q -f $MENDER_CLIENT_REV)
+RUN git submodule update --init --depth 1
 
 ARG MENDER_CONNECT_REV=master
-RUN git clone https://github.com/mendersoftware/mender-connect /src/mender-connect
 WORKDIR /src/mender-connect
-RUN git fetch origin $MENDER_CONNECT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONNECT_REV
+RUN git init -q && git remote add origin https://github.com/mendersoftware/mender-connect
+RUN git fetch --depth 1 origin $MENDER_CONNECT_REV:refs/rev && git checkout -q FETCH_HEAD || \
+    (git fetch origin && git checkout -q -f $MENDER_CONNECT_REV)
 
 ARG MENDER_CONFIGURE_REV=master
-RUN git clone https://github.com/mendersoftware/mender-configure-module /src/mender-configure-module
 WORKDIR /src/mender-configure-module
-RUN git fetch origin $MENDER_CONFIGURE_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONFIGURE_REV
+RUN git init -q && git remote add origin https://github.com/mendersoftware/mender-configure-module
+RUN git fetch --depth 1 origin $MENDER_CONFIGURE_REV:refs/rev && git checkout -q FETCH_HEAD || \
+    (git fetch origin && git checkout -q -f $MENDER_CONFIGURE_REV)
 
 FROM scratch AS sources
 COPY --from=clone /src /
