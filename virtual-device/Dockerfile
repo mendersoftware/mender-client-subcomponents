@@ -104,6 +104,7 @@ RUN mender-artifact write bootstrap-artifact \
 
 # Final image to run the Virtual Device from
 FROM ubuntu:24.04
+ARG DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir --parents /run/dbus && apt-get update && apt-get install -y --no-install-recommends \
     liblzma5 dbus openssh-server sudo liblmdb0 libarchive13 libboost-log1.83.0 iproute2 jq \
