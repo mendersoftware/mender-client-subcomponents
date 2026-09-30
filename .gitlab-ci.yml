@@ -27,6 +27,8 @@ variables:
   DOCKER_DIR: virtual-device
   MULTIPLATFORM_BUILD: "true"
   MULTIPLATFORM_PLATFORMS: "linux/amd64,linux/arm64"
+  # A cached clone stage keeps an old checkout of a branch rev
+  EXTRA_DOCKER_ARGS: "--no-cache-filter clone"
   DOCKER_HOST: "tcp://docker:2376"
   DOCKER_TLS_VERIFY: "1"
   DOCKER_CERT_PATH: "/certs/client"
