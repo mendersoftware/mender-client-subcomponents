@@ -40,6 +40,11 @@
       "name": "mender-container-modules",
       "version": "main",
       "source": "github.com/mendersoftware/mender-container-modules"
+    },
+    {
+      "name": "mender-delta-container-modules",
+      "version": "main",
+      "source": "github.com/mendersoftware/mender-delta-container-modules"
     }
   ]
 }
