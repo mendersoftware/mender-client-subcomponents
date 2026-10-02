@@ -1606,11 +1606,12 @@ def determine_version_to_include_in_release(state, repo_info):
         branch = re.sub(r"\.[^.]+$", ".x", new_repo_version)
         follow_branch = "%s/%s" % (remote, branch)
     else:
-        # No series exists. Base on master.
+        # No series exists. Base on the branch named in the JSON
         version_list = sorted_final_version_list(
             os.path.join(state["repo_dir"], repo_name)
         )
-        follow_branch = "%s/master" % find_upstream_remote(state, repo_name)
+        remote = find_upstream_remote(state, repo_name)
+        follow_branch = f"{remote}/{repo_info['version']}"
         if len(version_list) > 0:
             prev_of_repo = version_list[0]
             new_repo_version = determine_version_bump(
