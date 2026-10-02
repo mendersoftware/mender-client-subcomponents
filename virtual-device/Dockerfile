@@ -108,7 +108,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir --parents /run/dbus && apt-get update && apt-get install -y --no-install-recommends \
     liblzma5 dbus openssh-server sudo liblmdb0 libarchive13 libboost-log1.83.0 iproute2 jq \
-    libglib2.0-0 ca-certificates systemd
+    libglib2.0-0 ca-certificates systemd curl
 
 # Set no password
 RUN sed -ie 's/^root:[^:]*:/root::/' /etc/shadow
