@@ -1,54 +1,91 @@
 # Creates a container which acts as a bare bones non-VM based Mender Client
 # installation, for use in tests and as Virtual Device for evaluation
 
+ARG XX_VERSION=1.9.0
+
+# Sources of the components. To skip the cloning, pass --build-context
+# sources=<dir> where <dir> contains the mender, mender-connect and
+# mender-configure-module checkouts. Don't pass the checkouts themselves:
+# mender's own .dockerignore would then apply and make its version -dirty.
+FROM --platform=$BUILDPLATFORM alpine:3.24 AS clone
+RUN apk add --no-cache git
+
+ARG MENDER_CLIENT_REV=master
+WORKDIR /src/mender
+RUN git init -q && git remote add origin https://github.com/mendersoftware/mender
+RUN git fetch --depth 1 origin $MENDER_CLIENT_REV:refs/rev && git checkout -q FETCH_HEAD || \
+    (git fetch origin && git checkout -q -f $MENDER_CLIENT_REV)
+RUN git submodule update --init --depth 1
+
+ARG MENDER_CONNECT_REV=master
+WORKDIR /src/mender-connect
+RUN git init -q && git remote add origin https://github.com/mendersoftware/mender-connect
+RUN git fetch --depth 1 origin $MENDER_CONNECT_REV:refs/rev && git checkout -q FETCH_HEAD || \
+    (git fetch origin && git checkout -q -f $MENDER_CONNECT_REV)
+
+ARG MENDER_CONFIGURE_REV=master
+WORKDIR /src/mender-configure-module
+RUN git init -q && git remote add origin https://github.com/mendersoftware/mender-configure-module
+RUN git fetch --depth 1 origin $MENDER_CONFIGURE_REV:refs/rev && git checkout -q FETCH_HEAD || \
+    (git fetch origin && git checkout -q -f $MENDER_CONFIGURE_REV)
+
+FROM scratch AS sources
+COPY --from=clone /src /
+
+# The build stages run on the build platform and cross-compile for the target
+# platform. Compiling under QEMU emulation is slow, and the Go build can hang.
+# The xx-* helpers install target packages and set up the cross-compilers, see
+# https://github.com/tonistiigi/xx
+FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
+
+FROM --platform=$BUILDPLATFORM ubuntu:24.04 AS build-base
+COPY --from=xx / /
+ARG TARGETPLATFORM
+
 # Build mender repository, which is heaviest part
-FROM ubuntu:24.04 AS build-mender
+FROM build-base AS build-mender
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y make git build-essential jq cmake \
-    libssl-dev liblmdb++-dev libboost-dev libboost-log-dev \
+RUN apt-get update && apt-get install -y make git jq cmake pkgconf
+RUN xx-apt-get install -y gcc g++ libssl-dev liblmdb++-dev libboost-dev libboost-log-dev \
     libarchive-dev libdbus-1-dev
 
-# TODO MEN-9015: figure out how to get these from the json
-ARG MENDER_CLIENT_REV=master
-RUN git clone https://github.com/mendersoftware/mender /src/mender
-WORKDIR /src/mender
-RUN git fetch origin $MENDER_CLIENT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CLIENT_REV
-RUN git submodule update --init
-
+COPY --from=sources /mender /src/mender
 WORKDIR /src/mender
 RUN mkdir --parents /mender-install/etc/mender
-RUN cmake -D CMAKE_INSTALL_PREFIX:PATH=/usr -S .
+RUN TRIPLE=$(xx-info triple) && \
+    PKG_CONFIG=$TRIPLE-pkg-config cmake -D CMAKE_INSTALL_PREFIX:PATH=/usr -D BUILD_TESTS=OFF \
+        -D CMAKE_SYSTEM_NAME=Linux -D CMAKE_SYSTEM_PROCESSOR=$(xx-info march) \
+        -D CMAKE_C_COMPILER=$TRIPLE-gcc -D CMAKE_CXX_COMPILER=$TRIPLE-g++ -S .
 RUN DESTDIR=/mender-install make --jobs=$(nproc --all) install
 RUN jq ".ServerCertificate=\"/usr/share/mender-auth/examples/demo.crt\" | .ServerURL=\"https://docker.mender.io/\"" \
     < examples/mender.conf.demo > /mender-install/etc/mender/mender.conf
 RUN mkdir --parents /mender-install/var/lib/mender && echo device_type=generic-x86_64 > /mender-install/var/lib/mender/device_type
 
 # Build mender-connect and mender-configure, and generate the bootstrap Artifact
-FROM ubuntu:24.04 AS build-other
+FROM build-base AS build-other
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y make git golang liblzma-dev libglib2.0-dev curl jq
-
-ARG MENDER_CONNECT_REV=master
-ARG MENDER_CONFIGURE_REV=master
+# qemu-user is never run. It only satisfies libglib2.0-dev's "python3 | qemu-user"
+# dependency, which would otherwise install python3 for the target and run it.
+RUN apt-get update && apt-get install -y --no-install-recommends make git golang pkgconf qemu-user \
+    ca-certificates curl jq
+RUN xx-apt-get install -y --no-install-recommends gcc libc6-dev liblzma-dev libglib2.0-dev
 
 # mender-connect ---------------------------------------------------------------
 
-RUN git clone https://github.com/mendersoftware/mender-connect /src/mender-connect
+COPY --from=sources /mender-connect /src/mender-connect
 WORKDIR /src/mender-connect
-RUN git fetch origin $MENDER_CONNECT_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONNECT_REV
 
 RUN mkdir --parents /mender-install/etc/mender
-RUN make prefix=/mender-install install
+RUN xx-go --wrap && CGO_ENABLED=1 make prefix=/mender-install install
 RUN jq ".User=\"root\"" \
     < examples/mender-connect.conf > /mender-install/etc/mender/mender-connect.conf
 
 # mender-configure -------------------------------------------------------------
 
-RUN git clone https://github.com/mendersoftware/mender-configure-module /src/mender-configure-module
+COPY --from=sources /mender-configure-module /src/mender-configure-module
 WORKDIR /src/mender-configure-module
-RUN git fetch origin $MENDER_CONFIGURE_REV && git checkout FETCH_HEAD || git checkout -f $MENDER_CONFIGURE_REV
 
 RUN make DESTDIR=/mender-install install
 
@@ -67,9 +104,11 @@ RUN mender-artifact write bootstrap-artifact \
 
 # Final image to run the Virtual Device from
 FROM ubuntu:24.04
+ARG DEBIAN_FRONTEND=noninteractive
 
-RUN mkdir --parents /run/dbus && apt-get update && apt-get install -y \
-    liblzma5 dbus openssh-server sudo liblmdb0 libarchive13 libboost-log1.83.0 iproute2 jq
+RUN mkdir --parents /run/dbus && apt-get update && apt-get install -y --no-install-recommends \
+    liblzma5 dbus openssh-server sudo liblmdb0 libarchive13 libboost-log1.83.0 iproute2 jq \
+    libglib2.0-0 ca-certificates systemd
 
 # Set no password
 RUN sed -ie 's/^root:[^:]*:/root::/' /etc/shadow
