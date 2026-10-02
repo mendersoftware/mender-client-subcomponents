@@ -15,6 +15,7 @@ DOCS_PAGES = {
     "mender-configure-module": "20.Mender-Client/05.mender-configure-module/docs.md",
     "mender-binary-delta": "20.Mender-Client/06.mender-binary-delta/docs.md",
     "mender-container-modules": "20.Mender-Client/07.mender-container-modules/docs.md",
+    "mender-delta-container-modules": "20.Mender-Client/08.mender-delta-container-modules/docs.md",
 }
 
 
