@@ -1716,8 +1716,9 @@ def process_chksum_file(file):
             ] = True
             continue
 
-        if component[0:7] == "vendor/":
-            component = component[7:]
+        # Strip up to the first vendor directory, so that both "vendor/foo"
+        # and "src/common/vendor/foo" become "foo".
+        component = re.sub(r"^(.*?/)?vendor/", "", component, count=1)
 
         if component.find("/vendor/") >= 0:
             # We assume that sub dependencies are covered by the top license.
