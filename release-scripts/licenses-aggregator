@@ -1727,6 +1727,13 @@ def process_chksum_file(file):
             ] = True
             continue
 
+        if "/test/" in component:
+            # Test dependencies are not part of the default build.
+            LICENSE_FILES_COVERED[
+                os.path.join(os.path.dirname(file), license_file)
+            ] = True
+            continue
+
         add_file_to_licenses(
             component, os.path.join(os.path.dirname(file), license_file)
         )
