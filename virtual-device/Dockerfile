@@ -148,6 +148,7 @@ RUN \
 RUN update-ca-certificates
 
 COPY entrypoint.sh /
+COPY systemctl /usr/local/bin/systemctl
 
 # Container becomes "healthy" once mender-auth responds over D-Bus.
 # start-period covers dbus-daemon init + mender-auth first auth cycle.

@@ -34,11 +34,15 @@ sleep 8
 # transient condition that causes mender-auth to exit (e.g. exhausting its
 # auth-retry budget during a network partition) leaves the virtual device
 # permanently unable to talk to the server.
+# The PID of each daemon is kept in /run/<name>.pid, which the systemctl
+# wrapper relies on to make `mender-update check-update` work.
 supervise() {
     name=$1
     shift
     while [ ! -f /stop-respawn ]; do
-        "$@" || echo "[entrypoint] $name exited $?, restarting in 2s" >&2
+        "$@" &
+        echo $! > "/run/$name.pid"
+        wait $! || echo "[entrypoint] $name exited $?, restarting in 2s" >&2
         sleep 2
     done
     echo "[entrypoint] $name: /stop-respawn detected, not restarting" >&2
